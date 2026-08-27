@@ -1,0 +1,39 @@
+# 不上線：原始拍攝、中間成品、本機腳本
+一樓*/
+二樓*/
+工廠大門/
+房1*/
+環景成品/
+環景成品圖/
+環景細部圖/
+導覽員人選/
+金享大圖/
+gfpgan/
+scripts/
+*.zip
+*.bat
+1761725742688.jpg
+*.xlsx
+啟動展間.bat
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# 文案編輯器（僅本機）
+editor.html
+css/editor.css
+js/editor.js
+
+# 導覽員素材：舊版備份不上線
+media/guide/*_v1.png
+media/guide/_*.png
+
+# 修圖過程的除錯圖不上線
+media/brand/_*.jpg
+media/brand/_*.png
+_work/
+_filelist_utf8.txt

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "station-1f-line-right-front",
+    "title": "一樓生產線（右前半部）",
+    "file": "station-1f-line-right-front.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 90,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓生產線右前半部。您可以拖曳旋轉畫面、滾輪縮放，查看前段加工機台與作業空間。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-line-right-front-next",
+        "target": "station-1f-qc",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓品管室 →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-qc",
+    "title": "一樓品管室",
+    "file": "station-1f-qc.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 98,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓品管室。這裡進行量測與檢驗作業，您可以拖曳旋轉畫面、滾輪縮放，查看工作台、量測設備與室內切時機。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-qc-prev",
+        "target": "station-1f-line-right-front",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓生產線（右前半部）"
+      },
+      {
+        "id": "link-station-1f-qc-next",
+        "target": "station-1f-parts-stock",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓半成品零件庫存區 →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-parts-stock",
+    "title": "一樓半成品零件庫存區",
+    "file": "station-1f-parts-stock.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 101,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓半成品零件庫存區。這裡存放加工後待組裝的大型零件、模具與貨架物料。您可以拖曳旋轉畫面、滾輪縮放，查看天車、貨架與地面零件配置。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-parts-stock-prev",
+        "target": "station-1f-qc",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓品管室"
+      },
+      {
+        "id": "link-station-1f-parts-stock-next",
+        "target": "station-2f",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "二樓置物區 →"
+      }
+    ]
+  },
+  {
+    "id": "station-2f",
+    "title": "二樓置物區",
+    "file": "station-2f.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 97,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到二樓置物區。這裡存放零件、棧板與貨架物料，您可以拖曳旋轉畫面、滾輪縮放，查看天車、貨架與走道配置。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-2f-prev",
+        "target": "station-1f-parts-stock",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓半成品零件庫存區"
+      }
+    ]
+  }
+]

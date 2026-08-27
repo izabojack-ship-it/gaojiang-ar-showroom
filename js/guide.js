@@ -1,0 +1,1276 @@
+/**
+ * 虛擬導覽員：語音（Web Speech）＋場景介紹＋機台單點 POI
+ * 文案來源：stations.json 的 guide / points，可被 localStorage 覆寫
+ */
+
+export const GUIDE_OVERRIDE_KEY = 'f360-guide-overrides';
+const GUIDE_MUTE_KEY = 'f360-guide-muted';
+const GUIDE_MODE_KEY = 'f360-guide-mode'; // avatar=動畫立牌 window=影片視窗 cutout=去背真人
+const GUIDE_LANG_KEY = 'f360-guide-lang'; // zh | en
+const GUIDE_SEEN_INTRO_KEY = 'f360-guide-seen-intro';
+const GUIDE_CHANNEL = 'f360-guide-overrides';
+
+/** 公司介紹（點進網址的開場旁白），中英文對照 */
+export const COMPANY_INTRO = {
+  zh: {
+    title: '高將實境 AR 展間',
+    text: '歡迎來到高將實境 AR 展間。目前為單站環景測試，您可以拖曳旋轉、滾輪縮放，體驗 360° 虛擬導覽。後續會依廠區動線補上更多展站與熱點介紹。',
+  },
+  en: {
+    title: 'Gaojiang AR Showroom',
+    text: 'Welcome to the Gaojiang AR showroom. This is a single-station 360° test: drag to look around and scroll to zoom. More stations and hotspots will be added along the factory route.',
+  },
+};
+
+function broadcastGuideOverrides(overrides) {
+  try {
+    const ch = new BroadcastChannel(GUIDE_CHANNEL);
+    ch.postMessage({ type: 'guide-overrides', overrides });
+    ch.close();
+  } catch { /* ignore */ }
+}
+
+export function loadGuideOverrides() {
+  try {
+    const raw = localStorage.getItem(GUIDE_OVERRIDE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function saveGuideOverrides(overrides) {
+  localStorage.setItem(GUIDE_OVERRIDE_KEY, JSON.stringify(overrides));
+  broadcastGuideOverrides(overrides);
+}
+
+export function clearGuideOverrides() {
+  localStorage.removeItem(GUIDE_OVERRIDE_KEY);
+  broadcastGuideOverrides(null);
+}
+
+/** 訂閱本機覆寫變更（跨分頁 storage + 同瀏覽器 BroadcastChannel） */
+export function onGuideOverridesChange(handler) {
+  const onStorage = (event) => {
+    if (event.key !== GUIDE_OVERRIDE_KEY) return;
+    handler(loadGuideOverrides());
+  };
+  window.addEventListener('storage', onStorage);
+
+  let ch = null;
+  try {
+    ch = new BroadcastChannel(GUIDE_CHANNEL);
+    ch.onmessage = (event) => {
+      if (event?.data?.type !== 'guide-overrides') return;
+      handler(event.data.overrides ?? loadGuideOverrides());
+    };
+  } catch { /* ignore */ }
+
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    try { ch?.close(); } catch { /* ignore */ }
+  };
+}
+
+/**
+ * 寫入單一展站的 guide / points 覆寫（缺省則沿用既有覆寫或 base）
+ */
+export function writeSceneGuideOverride(sceneId, { guide, points }, baseRecord = null) {
+  const overrides = loadGuideOverrides() || {};
+  const prev = overrides[sceneId] || {};
+  overrides[sceneId] = {
+    guide: guide !== undefined
+      ? guide
+      : (prev.guide ?? structuredClone(baseRecord?.guide || null)),
+    points: points !== undefined
+      ? points
+      : structuredClone(prev.points ?? baseRecord?.points ?? []),
+  };
+  saveGuideOverrides(overrides);
+  return overrides[sceneId];
+}
+
+/** 將覆寫合併進原始 stations 陣列（僅 guide / points） */
+export function applyGuideOverrides(records, overrides) {
+  if (!overrides || typeof overrides !== 'object') return records;
+  return records.map((record) => {
+    const patch = overrides[record.id];
+    if (!patch) return record;
+    return {
+      ...record,
+      guide: patch.guide !== undefined ? patch.guide : record.guide,
+      points: patch.points !== undefined ? patch.points : record.points,
+    };
+  });
+}
+
+export function createGuideController({
+  rootEl,
+  getScene,
+  getViewer,
+  getMarkersPlugin,
+  onFocusPoint,
+}) {
+  const els = {
+    root: rootEl,
+    avatar: rootEl?.querySelector('[data-guide-avatar]'),
+    name: rootEl?.querySelector('[data-guide-name]'),
+    role: rootEl?.querySelector('[data-guide-role]'),
+    status: rootEl?.querySelector('[data-guide-status]'),
+    title: rootEl?.querySelector('[data-guide-title]'),
+    text: rootEl?.querySelector('[data-guide-text]'),
+    playBtn: rootEl?.querySelector('[data-guide-play]'),
+    stopBtn: rootEl?.querySelector('[data-guide-stop]'),
+    muteBtn: rootEl?.querySelector('[data-guide-mute]'),
+    soloBtn: rootEl?.querySelector('[data-guide-solo]'),
+    closeBtn: rootEl?.querySelector('[data-guide-close]'),
+    openBtn: document.getElementById('f360-guide-open'),
+    poiList: rootEl?.querySelector('[data-guide-poi-list]'),
+  };
+
+  let solo = false;
+  let soloExitBtn = null;
+  let muted = false;
+  try {
+    muted = localStorage.getItem(GUIDE_MUTE_KEY) === '1';
+  } catch { /* ignore */ }
+
+  let speaking = false;
+  let currentUtterance = null;
+  let activePointId = null;
+  let collapsed = false;
+  let unlockedAudio = false;
+
+  /** 說話動態（嘴型／點頭）與逐字進度 */
+  let talkTimer = null;
+  let tickResetTimer = null;
+  let lastBoundaryAt = 0;
+  let speakStartAt = 0;
+  let currentUtterLen = 0;
+  let speakableChars = [];
+  // 中文語速估計（無 boundary 事件時的逐字進度後備）
+  const EST_CHARS_PER_SEC = 5.0;
+
+  /** 預生成語音（edge-tts 神經語音）：比瀏覽器 TTS 自然，缺檔時自動退回 TTS */
+  const AUDIO_BASE = './media/guide/audio/';
+  let audioEl = null;
+  let audioCtx = null;
+  let analyser = null;
+  let ampRaf = 0;
+  let ampValue = 0;
+  let ampTarget = 0;
+  let usingAudio = false;
+  const pcmCache = new Map();
+  let pcmData = null;
+  let pcmRate = 0;
+
+  /** 真人影片導覽員（本機素材，缺檔自動退回立牌＋語音） */
+  const VIDEO_BASE = './media/guide/video/';
+  const GUIDE_MODES = ['avatar', 'cutout'];
+  let mode = 'avatar';
+  try {
+    const saved = localStorage.getItem(GUIDE_MODE_KEY);
+    if (GUIDE_MODES.includes(saved)) mode = saved;
+    else if (saved === 'window') mode = 'cutout'; // 舊設定：視窗模式已移除，併入真人
+  } catch { /* ignore */ }
+  let videoBox = null;
+  let videoEl = null;
+  let videoPlate = null;
+  let usingVideo = false;
+  let videoToken = 0;
+  let modeButtons = [];
+
+  /** 語言（公司介紹中英切換） */
+  let lang = 'zh';
+  try {
+    if (localStorage.getItem(GUIDE_LANG_KEY) === 'en') lang = 'en';
+  } catch { /* ignore */ }
+  let langBtn = null;
+  let companyMode = false; // 目前字幕內容是否為公司介紹
+  let companyIntroPending = false; // 等待首次手勢後自動開講
+  let currentSpeakKey = null;
+  let currentSpeakText = '';
+  let currentSpeakLang = 'zh';
+
+  /** 影片播放看門狗：卡住超過 3 秒即改用語音接續，避免整段當掉 */
+  let videoWatchdog = 0;
+  let lastVideoTime = -1;
+  let lastVideoTickAt = 0;
+
+  function stopVideoWatchdog() {
+    window.clearInterval(videoWatchdog);
+    videoWatchdog = 0;
+  }
+
+  function startVideoWatchdog() {
+    stopVideoWatchdog();
+    lastVideoTime = -1;
+    lastVideoTickAt = Date.now();
+    videoWatchdog = window.setInterval(() => {
+      if (!usingVideo || !videoEl || videoEl.ended) {
+        stopVideoWatchdog();
+        return;
+      }
+      if (videoEl.paused) return;
+      if (videoEl.currentTime !== lastVideoTime) {
+        lastVideoTime = videoEl.currentTime;
+        lastVideoTickAt = Date.now();
+        return;
+      }
+      if (Date.now() - lastVideoTickAt > 3000) recoverFromVideoStall();
+    }, 800);
+  }
+
+  function recoverFromVideoStall() {
+    stopVideoWatchdog();
+    const at = videoEl?.currentTime || 0;
+    const key = currentSpeakKey;
+    const text = currentSpeakText;
+    const spokenLang = currentSpeakLang;
+    freezeOrHideVideo();
+    if (key) {
+      playRecorded(key, at).catch(() => {
+        usingAudio = false;
+        if (text) speakTts(text, spokenLang);
+      });
+    } else if (text) {
+      speakTts(text, spokenLang);
+    }
+  }
+
+  function injectVideoStyles() {
+    if (document.getElementById('f360-guide-video-style')) return;
+    const style = document.createElement('style');
+    style.id = 'f360-guide-video-style';
+    style.textContent = `
+      .f360-gmode {
+        position: absolute;
+        right: max(10px, env(safe-area-inset-right));
+        /* 高於立繪頭頂，避免擋住導覽員的臉 */
+        bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(67vh, 668px) + 8px);
+        display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 6px;
+        pointer-events: auto; z-index: 7;
+      }
+      @media (max-width: 720px) {
+        .f360-gmode {
+          bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(43vh, 368px) + 8px);
+        }
+      }
+      .f360-gmode__row { display: flex; gap: 6px; justify-content: flex-end; }
+      .f360-gmode__toggle {
+        padding: 8px 10px; border-radius: 999px; cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.22); background: rgba(10,14,20,0.72);
+        backdrop-filter: blur(12px); color: rgba(255,255,255,0.85);
+        font-size: 0.72rem; letter-spacing: 0.04em; white-space: nowrap;
+        box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+      }
+      [data-glang-switch] { font-weight: 700; color: #ffd869; border-color: rgba(212,160,23,0.5); }
+      .f360-gmode__opts {
+        display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+      }
+      .f360-gmode.is-collapsed .f360-gmode__opts { display: none; }
+      .f360-gmode__opts button {
+        padding: 6px 12px; border-radius: 999px; cursor: pointer; text-align: center;
+        border: 1px solid rgba(255,255,255,0.18); background: rgba(10,14,20,0.72);
+        backdrop-filter: blur(12px);
+        color: rgba(255,255,255,0.78); font-size: 0.72rem; white-space: nowrap;
+      }
+      .f360-gmode__opts button.is-active {
+        background: rgba(212,160,23,0.3); border-color: rgba(212,160,23,0.65); color: #ffd869;
+      }
+      .f360-gv {
+        position: absolute;
+        right: max(6px, env(safe-area-inset-right));
+        bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) - 4px);
+        z-index: 5; pointer-events: none;
+        animation: f360-presenter-in 0.55s ease-out backwards;
+      }
+      .f360-gv[hidden] { display: none !important; }
+      .f360-gv video { display: block; }
+      .f360-gv video.is-pack-src {
+        /* iPhone 對 opacity:0／極小尺寸的 video 不會解碼畫面，必須離屏但仍有實體尺寸 */
+        position: absolute !important;
+        left: -12000px !important;
+        top: 0 !important;
+        width: 360px !important;
+        height: 240px !important;
+        max-width: none !important;
+        opacity: 1 !important;
+        pointer-events: none !important;
+        filter: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+      .f360-gv__pack {
+        position: relative;
+        z-index: 2;
+        display: block; width: auto; background: transparent;
+        filter: drop-shadow(0 16px 26px rgba(0,0,0,0.5));
+      }
+      .f360-gv__pack[hidden] { display: none !important; }
+      .f360-guide.is-fmt-window .f360-gv video {
+        height: min(46vh, 430px); aspect-ratio: 3 / 4; width: auto;
+        object-fit: cover; object-position: 50% 18%;
+        border-radius: 16px; border: 1px solid rgba(212,160,23,0.45);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.5); background: #0b0f14;
+      }
+      .f360-guide.is-fmt-cutout .f360-gv video,
+      .f360-guide.is-fmt-cutout .f360-gv__pack {
+        height: min(50vh, 470px); width: auto; background: transparent;
+        filter: drop-shadow(0 16px 26px rgba(0,0,0,0.5));
+      }
+      .f360-gv__plate {
+        position: absolute; left: 8px; bottom: 8%;
+        padding: 5px 10px; border-radius: 10px;
+        background: rgba(10,14,20,0.72); border: 1px solid rgba(212,160,23,0.4);
+        backdrop-filter: blur(12px); color: #fff;
+        font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+      }
+      .f360-guide.is-video-live .f360-presenter { display: none !important; }
+      @media (max-width: 720px) {
+        .f360-guide[data-guide-mode="window"] .f360-gv video { height: min(34vh, 300px); }
+        .f360-guide[data-guide-mode="cutout"] .f360-gv video,
+        .f360-guide[data-guide-mode="cutout"] .f360-gv__pack { height: min(36vh, 320px); }
+        .f360-gv__plate { display: none; }
+      }
+      /* 手機橫向：導覽員縮小貼右下角，避免遮住環景 */
+      @media (max-height: 540px), (max-width: 960px) and (orientation: landscape) {
+        .f360-gmode {
+          bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(38vh, 150px) + 8px);
+        }
+        .f360-gmode__toggle { padding: 6px 9px; font-size: 0.66rem; }
+        .f360-guide.is-fmt-window .f360-gv video,
+        .f360-guide[data-guide-mode="window"] .f360-gv video { height: min(36vh, 140px); }
+        .f360-guide.is-fmt-cutout .f360-gv video,
+        .f360-guide.is-fmt-cutout .f360-gv__pack,
+        .f360-guide[data-guide-mode="cutout"] .f360-gv video,
+        .f360-guide[data-guide-mode="cutout"] .f360-gv__pack {
+          height: min(40vh, 155px);
+          filter: drop-shadow(0 8px 14px rgba(0,0,0,0.45));
+        }
+        .f360-gv__plate { display: none; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureVideoEl() {
+    if (videoEl) return;
+    injectVideoStyles();
+    videoBox = document.createElement('div');
+    videoBox.className = 'f360-gv';
+    videoBox.hidden = true;
+    videoEl = document.createElement('video');
+    videoEl.playsInline = true;
+    videoEl.setAttribute('playsinline', '');
+    videoEl.setAttribute('webkit-playsinline', '');
+    videoEl.preload = 'auto';
+    videoEl.muted = false;
+    videoPlate = document.createElement('div');
+    videoPlate.className = 'f360-gv__plate';
+    videoPlate.textContent = els.name?.textContent || '高將副總';
+    videoBox.append(videoEl, videoPlate);
+    els.root?.appendChild(videoBox);
+
+    videoEl.addEventListener('play', () => {
+      usingVideo = true;
+      setSpeaking(true);
+      startVideoWatchdog();
+    });
+    videoEl.addEventListener('timeupdate', () => {
+      if (usingVideo && videoEl.duration > 0) {
+        setSpeechProgress(videoEl.currentTime / videoEl.duration);
+      }
+    });
+    videoEl.addEventListener('ended', () => {
+      stopVideoWatchdog();
+      usingVideo = false;
+      setSpeaking(false);
+      setSpeechProgress(1);
+    });
+    videoEl.addEventListener('error', () => {
+      if (usingVideo) recoverFromVideoStall();
+    });
+  }
+
+  /** 已知缺檔的影片網址，避免重複探測造成延遲 */
+  const missingVideos = new Set();
+  let packCanvas = null;
+  let packOff = null;
+  let packRaf = 0;
+
+  function supportsWebmAlpha() {
+    try {
+      const probe = document.createElement('video');
+      return Boolean(probe.canPlayType('video/webm; codecs="vp9"'));
+    } catch {
+      return false;
+    }
+  }
+
+  /** iPhone／iPad／Safari：WebM 即使能播也沒有透明通道，必須走 H.264 遮罩合成 */
+  function needsPackedCutout() {
+    const ua = navigator.userAgent || '';
+    const iOS = /iPad|iPhone|iPod/.test(ua)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+      || /CriOS|FxiOS|EdgiOS/.test(ua);
+    const safari = /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox|CriOS|FxiOS/.test(ua);
+    return iOS || safari || !supportsWebmAlpha();
+  }
+
+  function stopPackedComposite() {
+    window.cancelAnimationFrame(packRaf);
+    packRaf = 0;
+    videoEl?.classList.remove('is-pack-src');
+    if (packCanvas) packCanvas.hidden = true;
+  }
+
+  function startPackedComposite() {
+    if (!videoEl || !videoBox) return;
+    if (!packCanvas) {
+      packCanvas = document.createElement('canvas');
+      packCanvas.className = 'f360-gv__pack';
+      packOff = document.createElement('canvas');
+      videoBox.appendChild(packCanvas);
+    }
+    packCanvas.hidden = false;
+    videoEl.classList.add('is-pack-src');
+    window.cancelAnimationFrame(packRaf);
+    const tick = () => {
+      packRaf = window.requestAnimationFrame(tick);
+      if (!videoEl || videoEl.readyState < 2) return;
+      const vw = videoEl.videoWidth;
+      const vh = videoEl.videoHeight;
+      if (vw < 4 || vh < 2) return;
+      const w = Math.floor(vw / 2);
+      if (packCanvas.width !== w || packCanvas.height !== vh) {
+        packCanvas.width = w;
+        packCanvas.height = vh;
+        packOff.width = w;
+        packOff.height = vh;
+      }
+      try {
+        const ctx = packCanvas.getContext('2d', { willReadFrequently: true });
+        const octx = packOff.getContext('2d', { willReadFrequently: true });
+        if (!ctx || !octx) return;
+        ctx.drawImage(videoEl, 0, 0, w, vh, 0, 0, w, vh);
+        octx.drawImage(videoEl, w, 0, w, vh, 0, 0, w, vh);
+        const color = ctx.getImageData(0, 0, w, vh);
+        const mask = octx.getImageData(0, 0, w, vh);
+        const cd = color.data;
+        const md = mask.data;
+        for (let i = 0; i < cd.length; i += 4) cd[i + 3] = md[i];
+        ctx.putImageData(color, 0, 0);
+      } catch {
+        /* iOS 偶發畫布讀取失敗時略過該幀，下一幀再試 */
+      }
+    };
+    packRaf = window.requestAnimationFrame(tick);
+  }
+
+  function probeVideo(url) {
+    return new Promise((resolve, reject) => {
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      const timer = window.setTimeout(() => {
+        probe.onloadedmetadata = null;
+        probe.onerror = null;
+        reject(new Error('guide-video-timeout'));
+      }, 5000);
+      probe.onloadedmetadata = () => {
+        window.clearTimeout(timer);
+        probe.removeAttribute('src');
+        resolve();
+      };
+      probe.onerror = () => {
+        window.clearTimeout(timer);
+        reject(new Error('guide-video-missing'));
+      };
+      probe.src = url;
+    });
+  }
+
+  async function playVideoClip(key) {
+    ensureVideoEl();
+    const token = ++videoToken;
+    // iPhone／Safari 不支援 WebM 透明通道，改用左右拼接的 H.264（左彩圖、右遮罩）在 canvas 合成去背
+    const cutoutFirst = needsPackedCutout()
+      ? [['ios.mp4', 'cutout-pack'], ['mp4', 'window']]
+      : [['webm', 'cutout'], ['ios.mp4', 'cutout-pack'], ['mp4', 'window']];
+    const candidates = mode === 'cutout' ? cutoutFirst : [['mp4', 'window']];
+    let url = null;
+    let fmt = null;
+    for (const [ext, kind] of candidates) {
+      const candidate = `${VIDEO_BASE}${encodeURIComponent(key)}.${ext}`;
+      if (missingVideos.has(candidate)) continue;
+      if (kind === 'cutout-pack') {
+        url = candidate;
+        fmt = kind;
+        break;
+      }
+      try {
+        await probeVideo(candidate);
+        url = candidate;
+        fmt = kind;
+        break;
+      } catch (err) {
+        if (err?.message === 'guide-video-missing') missingVideos.add(candidate);
+      }
+    }
+    if (!url) throw new Error('guide-video-missing');
+    if (token !== videoToken) throw new Error('guide-video-stale');
+    // 互斥保險：播影片前，錄音與合成語音一律停止
+    stopRecorded();
+    if (speechSupported) window.speechSynthesis.cancel();
+    els.root?.classList.toggle('is-fmt-cutout', fmt === 'cutout' || fmt === 'cutout-pack');
+    els.root?.classList.toggle('is-fmt-window', fmt === 'window');
+    videoBox.hidden = false;
+    els.root?.classList.add('is-video-live');
+    if (fmt === 'cutout-pack') startPackedComposite();
+    else stopPackedComposite();
+    videoEl.src = url;
+    try {
+      await videoEl.play();
+    } catch (err) {
+      if (fmt === 'cutout-pack') {
+        missingVideos.add(url);
+        stopPackedComposite();
+        const fallback = `${VIDEO_BASE}${encodeURIComponent(key)}.mp4`;
+        els.root?.classList.remove('is-fmt-cutout');
+        els.root?.classList.add('is-fmt-window');
+        videoEl.src = fallback;
+        await videoEl.play();
+        return;
+      }
+      throw err;
+    }
+  }
+
+  /** 缺影片時的穩定處理：真人畫面定格續留，不跳回立牌 */
+  function freezeOrHideVideo() {
+    if (videoEl && videoEl.readyState >= 2 && videoBox && !videoBox.hidden) {
+      videoToken += 1;
+      stopVideoWatchdog();
+      try { videoEl.pause(); } catch { /* ignore */ }
+      usingVideo = false;
+    } else {
+      stopVideo({ hide: true });
+    }
+  }
+
+  function stopVideo({ hide = false } = {}) {
+    if (!videoEl) return;
+    videoToken += 1;
+    stopVideoWatchdog();
+    stopPackedComposite();
+    try { videoEl.pause(); } catch { /* ignore */ }
+    usingVideo = false;
+    if (hide) {
+      videoEl.removeAttribute('src');
+      try { videoEl.load(); } catch { /* ignore */ }
+      if (videoBox) videoBox.hidden = true;
+      els.root?.classList.remove('is-video-live', 'is-fmt-cutout', 'is-fmt-window');
+    }
+  }
+
+  function updateModeButtons() {
+    modeButtons.forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.gmode === mode);
+    });
+  }
+
+  function applyMode(next) {
+    if (!GUIDE_MODES.includes(next)) next = 'avatar';
+    mode = next;
+    try { localStorage.setItem(GUIDE_MODE_KEY, next); } catch { /* ignore */ }
+    els.root?.setAttribute('data-guide-mode', next);
+    stopVideo({ hide: true });
+    updateModeButtons();
+  }
+
+  function ensureAudioEl() {
+    if (audioEl) return;
+    audioEl = new Audio();
+    audioEl.preload = 'auto';
+    audioEl.addEventListener('play', () => {
+      usingAudio = true;
+      setSpeaking(true);
+      startAmpLoop();
+    });
+    audioEl.addEventListener('timeupdate', () => {
+      if (usingAudio && audioEl.duration > 0) {
+        setSpeechProgress(audioEl.currentTime / audioEl.duration);
+      }
+    });
+    audioEl.addEventListener('ended', () => {
+      usingAudio = false;
+      setSpeaking(false);
+      setSpeechProgress(1);
+    });
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+      const srcNode = audioCtx.createMediaElementSource(audioEl);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      srcNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    } catch { analyser = null; }
+  }
+
+  async function preparePcm(url) {
+    if (pcmCache.has(url)) {
+      const hit = pcmCache.get(url);
+      pcmData = hit.ch;
+      pcmRate = hit.sr;
+      return;
+    }
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!audioCtx && Ctx) audioCtx = new Ctx();
+    if (!audioCtx) return;
+    const res = await fetch(url);
+    const raw = await res.arrayBuffer();
+    const buf = await audioCtx.decodeAudioData(raw.slice(0));
+    const ch = buf.getChannelData(0);
+    pcmCache.set(url, { ch, sr: buf.sampleRate });
+    pcmData = ch;
+    pcmRate = buf.sampleRate;
+  }
+
+  function ampFromPcm(timeSec) {
+    if (!pcmData || !pcmRate) return -1;
+    const i0 = Math.max(0, Math.floor(timeSec * pcmRate));
+    const n = Math.max(48, Math.floor(pcmRate * 0.028));
+    const end = Math.min(pcmData.length, i0 + n);
+    if (end <= i0) return 0;
+    let sum = 0;
+    for (let i = i0; i < end; i += 1) sum += pcmData[i] * pcmData[i];
+    return Math.min(1, Math.sqrt(sum / (end - i0)) * 7.2);
+  }
+
+  function startAmpLoop() {
+    cancelAnimationFrame(ampRaf);
+    const wave = analyser ? new Uint8Array(analyser.fftSize) : null;
+    const step = () => {
+      if (!speaking) {
+        ampValue = 0;
+        els.avatar?.style.setProperty('--amp', '0');
+        return;
+      }
+      if (usingAudio) {
+        const pcmAmp = ampFromPcm(audioEl?.currentTime || 0);
+        if (pcmAmp >= 0) {
+          ampTarget = pcmAmp;
+        } else if (analyser && wave) {
+          analyser.getByteTimeDomainData(wave);
+          let sum = 0;
+          for (let i = 0; i < wave.length; i += 1) {
+            const v = (wave[i] - 128) / 128;
+            sum += v * v;
+          }
+          const live = Math.min(1, Math.sqrt(sum / wave.length) * 5.8);
+          if (live > 0.04) ampTarget = live;
+        }
+      }
+      ampValue += (ampTarget - ampValue) * 0.42;
+      els.avatar?.style.setProperty('--amp', ampValue.toFixed(3));
+      ampRaf = requestAnimationFrame(step);
+    };
+    ampRaf = requestAnimationFrame(step);
+  }
+
+  async function playRecorded(key, offset = 0) {
+    // 互斥保險：確保影片與合成語音都已靜止，避免聲音重疊
+    stopVideo();
+    if (speechSupported) window.speechSynthesis.cancel();
+    ensureAudioEl();
+    const url = `${AUDIO_BASE}${encodeURIComponent(key)}.mp3`;
+    audioEl.src = url;
+    preparePcm(url).catch(() => { pcmData = null; pcmRate = 0; });
+    try { await audioCtx?.resume(); } catch { /* ignore */ }
+    await audioEl.play();
+    if (offset > 0) {
+      try { audioEl.currentTime = offset; } catch { /* ignore */ }
+    }
+  }
+
+  function stopRecorded() {
+    if (!audioEl) return;
+    audioEl.pause();
+    audioEl.removeAttribute('src');
+    usingAudio = false;
+    pcmData = null;
+    pcmRate = 0;
+  }
+
+  function talkTick() {
+    const a = els.avatar;
+    if (!a) return;
+    a.style.setProperty('--jaw', (0.45 + Math.random() * 0.9).toFixed(2));
+    // 無 PCM 波形時（TTS 或音檔尚未解碼）用節奏張嘴，避免站著不動
+    if (!pcmData) {
+      ampTarget = 0.72 + Math.random() * 0.28;
+      window.setTimeout(() => { if (!pcmData && speaking) ampTarget = 0.05; }, 70);
+    }
+    a.classList.add('is-tick');
+    window.clearTimeout(tickResetTimer);
+    tickResetTimer = window.setTimeout(() => a.classList.remove('is-tick'), 110);
+  }
+
+  function startTalkRhythm() {
+    stopTalkRhythm();
+    const step = () => {
+      if (!speaking) return;
+      // boundary 事件有在動就交給它；否則用節奏器模擬說話動態
+      if (Date.now() - lastBoundaryAt > 380) {
+        talkTick();
+        if (currentUtterLen > 0) {
+          const est = ((Date.now() - speakStartAt) / 1000) * EST_CHARS_PER_SEC;
+          setSpeechProgress(Math.min(1, est / currentUtterLen));
+        }
+      }
+      talkTimer = window.setTimeout(step, 130 + Math.random() * 170);
+    };
+    talkTimer = window.setTimeout(step, 120);
+  }
+
+  function stopTalkRhythm() {
+    window.clearTimeout(talkTimer);
+    talkTimer = null;
+    els.avatar?.classList.remove('is-tick');
+  }
+
+  function renderSpeakableText(text) {
+    if (!els.text) return;
+    els.text.textContent = '';
+    speakableChars = [];
+    const frag = document.createDocumentFragment();
+    for (const ch of String(text || '')) {
+      const span = document.createElement('span');
+      span.className = 'f360-guide__ch';
+      span.textContent = ch;
+      frag.appendChild(span);
+      speakableChars.push(span);
+    }
+    els.text.appendChild(frag);
+  }
+
+  function setSpeechProgress(ratio) {
+    const n = speakableChars.length;
+    if (!n) return;
+    const upto = Math.floor(Math.max(0, Math.min(1, ratio)) * n);
+    for (let i = 0; i < n; i += 1) {
+      speakableChars[i].classList.toggle('is-said', i < upto);
+    }
+  }
+
+  const speechSupported = typeof window !== 'undefined'
+    && 'speechSynthesis' in window
+    && 'SpeechSynthesisUtterance' in window;
+
+  function setCollapsed(next) {
+    collapsed = next;
+    if (next) setSolo(false);
+    els.root?.classList.toggle('is-collapsed', next);
+    els.openBtn?.classList.toggle('is-visible', next);
+    if (els.openBtn) {
+      els.openBtn.setAttribute('aria-hidden', next ? 'false' : 'true');
+    }
+  }
+
+  /** 專注導覽：隱藏所有介面與熱點，只留導覽員人物 */
+  function setSolo(next) {
+    solo = next;
+    document.body.classList.toggle('is-guide-solo', next);
+    if (soloExitBtn) soloExitBtn.hidden = !next;
+  }
+
+  function setSpeaking(next) {
+    speaking = next;
+    els.root?.classList.toggle('is-speaking', next);
+    els.avatar?.classList.toggle('is-speaking', next);
+    if (els.status) {
+      els.status.textContent = next ? '解說中' : (muted ? '已靜音' : '待命');
+    }
+    if (els.playBtn) {
+      els.playBtn.textContent = next ? '重播' : '播放語音';
+    }
+    if (next) {
+      startTalkRhythm();
+      startAmpLoop();
+    } else {
+      stopTalkRhythm();
+      ampTarget = 0;
+      els.avatar?.style.setProperty('--amp', '0');
+    }
+  }
+
+  function setMuted(next) {
+    muted = next;
+    try {
+      localStorage.setItem(GUIDE_MUTE_KEY, next ? '1' : '0');
+    } catch { /* ignore */ }
+    els.root?.classList.toggle('is-muted', next);
+    if (els.muteBtn) {
+      els.muteBtn.textContent = next ? '取消靜音' : '靜音';
+      els.muteBtn.setAttribute('aria-pressed', next ? 'true' : 'false');
+    }
+    if (next) stopSpeech();
+    else if (!speaking && els.status) els.status.textContent = '待命';
+  }
+
+  function isMaleVoice(v) {
+    const n = `${v.name || ''} ${v.voiceURI || ''}`;
+    if (/female|woman|girl|hsiao|hanhan|yating|xiaoxiao|xiaoyi|jenny|aria|zira/i.test(n)) return false;
+    if (/male|man|boy|yunjhe|yunyang|yunxi|yunjian|guy|davis|tony|kangkang|danny/i.test(n)) return true;
+    return null;
+  }
+
+  function pickVoice(prefLang = 'zh') {
+    if (!speechSupported) return null;
+    const voices = window.speechSynthesis.getVoices();
+    const byLang = (re) => voices.filter((v) => re.test(v.lang));
+    const preferMale = (list) => {
+      const male = list.find((v) => isMaleVoice(v) === true);
+      if (male) return male;
+      const unknown = list.find((v) => isMaleVoice(v) === null);
+      return unknown || list[0] || null;
+    };
+    if (prefLang === 'en') {
+      return preferMale(byLang(/en(-|_)?US/i))
+        || preferMale(byLang(/^en/i))
+        || null;
+    }
+    return preferMale(byLang(/zh(-|_)?TW/i))
+      || preferMale(byLang(/zh(-|_)?HK/i))
+      || preferMale(byLang(/zh/i))
+      || null;
+  }
+
+  function stopSpeech() {
+    stopVideo();
+    stopRecorded();
+    if (speechSupported) window.speechSynthesis.cancel();
+    currentUtterance = null;
+    setSpeaking(false);
+    setSpeechProgress(0);
+  }
+
+  function speak(text, { force = false, key = null, lang: speakLang = 'zh' } = {}) {
+    if (!text?.trim()) return;
+    if (muted && !force) return;
+
+    unlockedAudio = true;
+    stopSpeech();
+    currentSpeakKey = key;
+    currentSpeakText = text;
+    currentSpeakLang = speakLang;
+
+    // 真人影片模式：有對應影片就播影片；缺檔時真人定格＋語音，維持畫面穩定
+    if (mode !== 'avatar' && key) {
+      playVideoClip(key).catch((err) => {
+        if (err?.message === 'guide-video-stale') return;
+        freezeOrHideVideo();
+        playRecorded(key).catch(() => {
+          usingAudio = false;
+          speakTts(text, speakLang);
+        });
+      });
+      return;
+    }
+    if (mode !== 'avatar') freezeOrHideVideo();
+
+    if (key) {
+      playRecorded(key).catch(() => {
+        usingAudio = false;
+        speakTts(text, speakLang);
+      });
+      return;
+    }
+    speakTts(text, speakLang);
+  }
+
+  function speakTts(text, ttsLang = 'zh') {
+    if (!speechSupported) {
+      if (els.status) els.status.textContent = '此瀏覽器不支援語音';
+      return;
+    }
+    // 互斥保險：合成語音開講前，影片與錄音一律停止
+    stopVideo();
+    stopRecorded();
+    const utter = new SpeechSynthesisUtterance(text.trim());
+    utter.lang = ttsLang === 'en' ? 'en-US' : 'zh-TW';
+    // 男性副總：略慢、略低沉，沉穩專業
+    utter.rate = ttsLang === 'en' ? 0.96 : 0.94;
+    utter.pitch = 0.82;
+    const voice = pickVoice(ttsLang);
+    if (voice) utter.voice = voice;
+
+    currentUtterLen = utter.text.length;
+    utter.onstart = () => {
+      speakStartAt = Date.now();
+      lastBoundaryAt = 0;
+      setSpeechProgress(0);
+      setSpeaking(true);
+    };
+    utter.onboundary = (event) => {
+      lastBoundaryAt = Date.now();
+      talkTick();
+      if (currentUtterLen > 0) {
+        const idx = (event.charIndex || 0) + (event.charLength || 1);
+        setSpeechProgress(idx / currentUtterLen);
+      }
+    };
+    utter.onend = () => {
+      currentUtterance = null;
+      setSpeaking(false);
+      setSpeechProgress(1);
+    };
+    utter.onerror = () => {
+      currentUtterance = null;
+      setSpeaking(false);
+    };
+
+    currentUtterance = utter;
+    // Chrome 有時 voices 尚未載入，延遲一幀再講
+    window.setTimeout(() => {
+      if (currentUtterance !== utter) return;
+      window.speechSynthesis.speak(utter);
+    }, 40);
+  }
+
+  function showPanel() {
+    if (!els.root) return;
+    els.root.hidden = false;
+    setCollapsed(false);
+  }
+
+  function hidePanel() {
+    if (!els.root) return;
+    els.root.hidden = true;
+    setSolo(false);
+    stopSpeech();
+    activePointId = null;
+    // 無導覽的展間連「開啟導覽員」鈕也不顯示
+    els.openBtn?.classList.remove('is-visible');
+    els.openBtn?.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderPoiList(scene) {
+    if (!els.poiList) return;
+    const points = scene?.points || [];
+    if (!points.length) {
+      els.poiList.innerHTML = '';
+      els.poiList.hidden = true;
+      return;
+    }
+    els.poiList.hidden = false;
+    els.poiList.innerHTML = `
+      <p class="f360-guide__poi-label">機台單點介紹</p>
+      <div class="f360-guide__poi-chips">
+        ${points.map((p) => `
+          <button type="button" class="f360-guide__poi-chip${p.id === activePointId ? ' is-active' : ''}" data-poi-id="${p.id}">
+            ${escapeHtml(p.title)}
+          </button>`).join('')}
+      </div>`;
+  }
+
+  function setScript({ title, text, pointId = null }) {
+    activePointId = pointId;
+    if (els.title) els.title.textContent = title || '';
+    renderSpeakableText(text || '');
+    const scene = getScene?.();
+    renderPoiList(scene);
+  }
+
+  /** 公司介紹：點進網址的開場旁白，支援中英切換 */
+  function presentCompanyIntro({ autoPlay = true } = {}) {
+    showPanel();
+    companyMode = true;
+    activePointId = null;
+    const c = COMPANY_INTRO[lang] || COMPANY_INTRO.zh;
+    if (els.title) els.title.textContent = c.title;
+    renderSpeakableText(c.text);
+    renderPoiList(getScene?.());
+    if (!autoPlay || muted) return;
+    if (unlockedAudio) {
+      speak(c.text, { key: `company__intro_${lang}`, lang });
+    } else {
+      // 瀏覽器自動播放限制：等首次觸控／點擊後開講
+      companyIntroPending = true;
+    }
+  }
+
+  function setLang(next) {
+    const val = next === 'en' ? 'en' : 'zh';
+    if (val === lang) return;
+    lang = val;
+    try { localStorage.setItem(GUIDE_LANG_KEY, lang); } catch { /* ignore */ }
+    updateLangBtn();
+    if (companyMode) {
+      const resume = speaking || usingVideo || companyIntroPending;
+      companyIntroPending = false;
+      stopSpeech();
+      presentCompanyIntro({ autoPlay: resume });
+      return;
+    }
+    // 場景介紹顯示中且有雙語文案：立即以新語言重新呈現
+    const scene = getScene?.();
+    if (!activePointId && scene?.guide?.enabled && scene.guide.introEn
+      && els.root && !els.root.hidden) {
+      const resume = speaking || usingVideo;
+      stopSpeech();
+      presentSceneIntro(scene, { autoPlay: resume });
+    }
+  }
+
+  function updateLangBtn() {
+    if (!langBtn) return;
+    langBtn.textContent = lang === 'zh' ? 'EN' : '中文';
+    langBtn.title = lang === 'zh' ? 'Switch to English' : '切換為中文';
+  }
+
+  function presentSceneIntro(scene, { autoPlay = false } = {}) {
+    const guide = scene?.guide;
+    if (!guide?.enabled) {
+      hidePanel();
+      return;
+    }
+    companyMode = false;
+    companyIntroPending = false;
+
+    showPanel();
+    if (els.name) els.name.textContent = guide.name || '高將副總';
+    if (els.role) els.role.textContent = guide.role || '廠區導覽';
+    if (videoPlate) videoPlate.textContent = guide.name || '高將副總';
+
+    // 有英文文案時依目前語言切換；沒有則一律用中文
+    const useEn = lang === 'en' && guide.introEn;
+    const introText = (useEn ? guide.introEn : guide.intro) || '';
+    setScript({
+      title: useEn ? `${scene.title} · Introduction` : `${scene.title} · 場景介紹`,
+      text: introText,
+      pointId: null,
+    });
+
+    const shouldAuto = autoPlay && guide.autoPlayIntro !== false && !muted;
+    if (shouldAuto && introText) {
+      // 需使用者手勢後才自動播；若尚未解鎖則只顯示文案
+      const key = useEn ? `${scene.id}__intro_en` : `${scene.id}__intro`;
+      if (unlockedAudio) speak(introText, { key, lang: useEn ? 'en' : 'zh' });
+    }
+  }
+
+  function presentPoint(point, scene) {
+    if (!point) return;
+    companyMode = false;
+    companyIntroPending = false;
+    showPanel();
+    setScript({
+      title: point.title,
+      text: point.body || '',
+      pointId: point.id,
+    });
+    const sceneId = scene?.id || getScene?.()?.id;
+    if (point.body) speak(`${point.title}。${point.body}`, { key: sceneId ? `${sceneId}__${point.id}` : null });
+    onFocusPoint?.(point, scene);
+  }
+
+  function replayCurrent() {
+    if (companyMode) {
+      const c = COMPANY_INTRO[lang] || COMPANY_INTRO.zh;
+      speak(c.text, { force: true, key: `company__intro_${lang}`, lang });
+      return;
+    }
+    const title = els.title?.textContent || '';
+    const text = els.text?.textContent || '';
+    if (!text) return;
+    const scene = getScene?.();
+    if (activePointId) {
+      // 機台介紹已含標題
+      const key = scene ? `${scene.id}__${activePointId}` : null;
+      speak(`${title}。${text}`, { force: true, key });
+      return;
+    }
+    const useEn = lang === 'en' && scene?.guide?.introEn;
+    const key = scene ? (useEn ? `${scene.id}__intro_en` : `${scene.id}__intro`) : null;
+    speak(text, { force: true, key, lang: useEn ? 'en' : 'zh' });
+  }
+
+  function bindUi() {
+    els.playBtn?.addEventListener('click', () => {
+      unlockedAudio = true;
+      replayCurrent();
+    });
+    els.stopBtn?.addEventListener('click', () => stopSpeech());
+    els.muteBtn?.addEventListener('click', () => setMuted(!muted));
+    els.soloBtn?.addEventListener('click', () => setSolo(true));
+    els.closeBtn?.addEventListener('click', () => setCollapsed(true));
+
+    // 專注模式的退出鈕：掛在 body 上，不受介面隱藏規則影響
+    soloExitBtn = document.createElement('button');
+    soloExitBtn.type = 'button';
+    soloExitBtn.className = 'f360-solo-exit';
+    soloExitBtn.textContent = '結束專注導覽';
+    soloExitBtn.hidden = true;
+    soloExitBtn.addEventListener('click', () => setSolo(false));
+    document.body.appendChild(soloExitBtn);
+    els.openBtn?.addEventListener('click', () => {
+      showPanel();
+      setCollapsed(false);
+    });
+
+    els.poiList?.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-poi-id]');
+      if (!btn) return;
+      const scene = getScene?.();
+      const point = (scene?.points || []).find((p) => p.id === btn.dataset.poiId);
+      if (!point) return;
+      presentPoint(point, scene);
+    });
+
+    // 導覽員樣式切換器：右側浮動小按鈕，預設收合，點開展開選項
+    injectVideoStyles();
+    if (els.root) {
+      const wrap = document.createElement('div');
+      wrap.className = 'f360-gmode is-collapsed';
+      wrap.setAttribute('role', 'group');
+      wrap.setAttribute('aria-label', '導覽員樣式');
+      wrap.innerHTML = `
+        <div class="f360-gmode__row">
+          <button type="button" class="f360-gmode__toggle" data-glang-switch>EN</button>
+          <button type="button" class="f360-gmode__toggle" data-gmode-toggle>導覽員樣式</button>
+        </div>
+        <div class="f360-gmode__opts">
+          <button type="button" data-gmode="avatar">虛擬人</button>
+          <button type="button" data-gmode="cutout">真人</button>
+        </div>`;
+      els.root.appendChild(wrap);
+      wrap.addEventListener('click', (event) => {
+        if (event.target.closest('[data-glang-switch]')) {
+          unlockedAudio = true;
+          setLang(lang === 'zh' ? 'en' : 'zh');
+          return;
+        }
+        if (event.target.closest('[data-gmode-toggle]')) {
+          wrap.classList.toggle('is-collapsed');
+          return;
+        }
+        const btn = event.target.closest('[data-gmode]');
+        if (!btn) return;
+        wrap.classList.add('is-collapsed');
+        stopSpeech();
+        applyMode(btn.dataset.gmode);
+        // 切換後立刻用新模式重播當前解說，避免「站著不動」的空窗
+        unlockedAudio = true;
+        replayCurrent();
+      });
+      modeButtons = [...wrap.querySelectorAll('[data-gmode]')];
+      langBtn = wrap.querySelector('[data-glang-switch]');
+      updateLangBtn();
+    }
+
+    // 首次觸控／點擊後，若公司介紹還在等待自動播放，立即開講
+    document.addEventListener('pointerdown', () => {
+      unlockedAudio = true;
+      if (companyIntroPending && companyMode && !muted && !speaking) {
+        companyIntroPending = false;
+        const c = COMPANY_INTRO[lang] || COMPANY_INTRO.zh;
+        speak(c.text, { key: `company__intro_${lang}`, lang });
+      }
+    }, { once: true, passive: true });
+    applyMode(mode);
+
+    // 預熱 voices
+    if (speechSupported) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        pickVoice();
+      });
+    }
+
+    setMuted(muted);
+  }
+
+  bindUi();
+
+  return {
+    presentSceneIntro,
+    presentCompanyIntro,
+    /** 換站時同步機台點選清單（不自動講解） */
+    syncScene(scene) {
+      if (els.root?.hidden) return;
+      renderPoiList(scene);
+    },
+    presentPoint,
+    stopSpeech,
+    hidePanel,
+    showPanel,
+    setCollapsed,
+    unlockAudio() { unlockedAudio = true; },
+    isMuted: () => muted,
+    markIntroSeen(sceneId) {
+      try {
+        const map = JSON.parse(localStorage.getItem(GUIDE_SEEN_INTRO_KEY) || '{}');
+        map[sceneId] = true;
+        localStorage.setItem(GUIDE_SEEN_INTRO_KEY, JSON.stringify(map));
+      } catch { /* ignore */ }
+    },
+    hasSeenIntro(sceneId) {
+      try {
+        const map = JSON.parse(localStorage.getItem(GUIDE_SEEN_INTRO_KEY) || '{}');
+        return !!map[sceneId];
+      } catch {
+        return false;
+      }
+    },
+  };
+}
+
+export function buildInfoMarkerHtml(point) {
+  return `
+    <div class="info-marker" aria-hidden="true">
+      <div class="info-marker__pulse">
+        <span class="info-marker__ripple"></span>
+        <span class="info-marker__ripple info-marker__ripple--2"></span>
+        <span class="info-marker__core">i</span>
+      </div>
+      <div class="info-marker__chip">
+        <span class="info-marker__tag">機台介紹</span>
+        <span class="info-marker__name">${escapeHtml(point.title)}</span>
+      </div>
+    </div>`;
+}
+
+export function buildPointMarkers(scene) {
+  return (scene.points || []).map((point) => ({
+    id: point.id,
+    html: buildInfoMarkerHtml(point),
+    position: point.position,
+    size: { width: 148, height: 88 },
+    anchor: 'center bottom',
+    className: 'info-marker-wrap',
+    // 關閉 hover 縮放，避免與環景定位疊加造成震動
+    hoverScale: false,
+    tooltip: {
+      content: `介紹：${point.title}`,
+      className: 'f360-tooltip f360-tooltip--info',
+      position: 'top center',
+      trigger: 'hover',
+    },
+    data: {
+      kind: 'info',
+      pointId: point.id,
+    },
+  }));
+}
+
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
