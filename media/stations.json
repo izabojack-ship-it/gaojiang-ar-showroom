@@ -1,5 +1,74 @@
 [
   {
+    "id": "station-1f-corridor",
+    "title": "一樓走道空間",
+    "file": "station-1f-corridor.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 104,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓走道空間。這裡是廠區門口與內部動線交會處，您可以拖曳旋轉畫面、滾輪縮放，查看通道、棧板與貨架配置。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-corridor-next",
+        "target": "station-1f-line-left-new",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓生產線（左新機區） →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-line-left-new",
+    "title": "一樓生產線（左新機區）",
+    "file": "station-1f-line-left-new.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 81,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓生產線左新機區。這裡展示新機與待出機台，您可以拖曳旋轉畫面、滾輪縮放，查看機台配置與走道動線。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-line-left-new-prev",
+        "target": "station-1f-corridor",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓走道空間"
+      },
+      {
+        "id": "link-station-1f-line-left-new-next",
+        "target": "station-1f-line-right-front",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓生產線（右前半部） →"
+      }
+    ]
+  },
+  {
     "id": "station-1f-line-right-front",
     "title": "一樓生產線（右前半部）",
     "file": "station-1f-line-right-front.jpg",
@@ -19,7 +88,94 @@
     "points": [],
     "links": [
       {
+        "id": "link-station-1f-line-right-front-prev",
+        "target": "station-1f-line-left-new",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓生產線（左新機區）"
+      },
+      {
         "id": "link-station-1f-line-right-front-next",
+        "target": "station-1f-line-right-back",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓生產線（右後半部） →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-line-right-back",
+    "title": "一樓生產線（右後半部）",
+    "file": "station-1f-line-right-back.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 105,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓生產線右後半部。您可以拖曳旋轉畫面、滾輪縮放，查看中後段機台與產線配置。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-line-right-back-prev",
+        "target": "station-1f-line-right-front",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓生產線（右前半部）"
+      },
+      {
+        "id": "link-station-1f-line-right-back-next",
+        "target": "station-1f-parts-mfg",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓週邊零件製造區 →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-parts-mfg",
+    "title": "一樓週邊零件製造區",
+    "file": "station-1f-parts-mfg.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 91,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將副總",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "歡迎來到一樓週邊零件製造區。這裡進行大型鑄件與週邊零件加工，您可以拖曳旋轉畫面、滾輪縮放，查看機座、貨架與天車動線。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-parts-mfg-prev",
+        "target": "station-1f-line-right-back",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓生產線（右後半部）"
+      },
+      {
+        "id": "link-station-1f-parts-mfg-next",
         "target": "station-1f-qc",
         "position": {
           "yaw": "125deg",
@@ -50,12 +206,12 @@
     "links": [
       {
         "id": "link-station-1f-qc-prev",
-        "target": "station-1f-line-right-front",
+        "target": "station-1f-parts-mfg",
         "position": {
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓生產線（右前半部）"
+        "label": "← 一樓週邊零件製造區"
       },
       {
         "id": "link-station-1f-qc-next",

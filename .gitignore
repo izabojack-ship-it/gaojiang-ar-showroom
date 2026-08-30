@@ -37,3 +37,8 @@ media/brand/_*.jpg
 media/brand/_*.png
 _work/
 _filelist_utf8.txt
+
+# 本機備份／工具不上線
+_tools/
+media/panoramas/_before_ptgui/
+media/panoramas/*_before_restitch.jpg

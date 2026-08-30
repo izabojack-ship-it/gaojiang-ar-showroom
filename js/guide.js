@@ -248,7 +248,7 @@ export function createGuideController({
         position: absolute;
         right: max(10px, env(safe-area-inset-right));
         /* 高於立繪頭頂，避免擋住導覽員的臉 */
-        bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(67vh, 668px) + 8px);
+        bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(57vh, 548px) + 8px);
         display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 6px;
         pointer-events: auto; z-index: 7;
       }
