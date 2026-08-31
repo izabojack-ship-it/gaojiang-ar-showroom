@@ -1,0 +1,17 @@
+{
+  "name": "高將實境 AR 展間",
+  "install": "python3 --version",
+  "terminals": [
+    {
+      "name": "tour-server",
+      "command": "python3 -m http.server 8666",
+      "description": "Serves the static 360° AR showroom at http://localhost:8666 (tour: /index.html, editor: /editor.html, place mode: /index.html?place=1)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "tour",
+      "port": 8666
+    }
+  ]
+}
