@@ -96,7 +96,43 @@ Task Progress:
 - tile：邊長 ≥10000→400、≥5000→300，否則 200；OOM 依序降到 300/200/128
 - `half=True`, `gpu_id=0`；套件與 `machine-ai-upscale/requirements.txt` 相同
 
-套用背景時 `finish_gj(..., enhance=False)`；僅在來源約 2:1 時 `fill_full=True`。正方形或大面積全黑成品視為失敗，改用走道站 `.pts` 當 `-template` 重拼。
+套用背景時 `finish_gj(..., enhance=False, fill_full=True, nadir=False, zenith=False)`。
+
+**標準版不會在 CLI 產生控制點。** `-createproject` 只建檔，`-stitchnogui` / `-batch` 只縫圖。必須開 PTGui 視窗選「專案 → 對齊影像」（Shift+F5），等到「請稍候」結束再存檔輸出。
+
+**禁止**把其他展站的 `.pts` 當 `-template`（會複製錯誤相機方位，造成重影／斷樑）。只可用 `scripts/make_equirect_template.py` 產出的鏡頭+360 樣板（`imageparams=false`）。
+
+單站正確重拼：
+
+```powershell
+python -X utf8 -u scripts/restitch_one_ptgui.py station-1f-qc
+```
+
+## 拼好後的三種缺陷與修法（2026-08 實戰）
+
+成品出現「一團灰霧／模糊遮罩」或「整組錯亂」時，依序診斷：
+
+1. **孤兒照片**（對齊後 0 控制點，被亂放進畫面）：
+   `python -X utf8 -u scripts/exclude_orphans.py <sid> ...` — 解析 .pts 控制點數，移除孤兒、重出、套用。
+2. **手震模糊照片**（清晰度低於全站中位數一半，被縫進成品變成霧塊）：
+   `python -X utf8 -u scripts/exclude_blurry.py [--ratio=0.5] <sid> ...` — Laplacian 清晰度過濾，僅在該方位另有清晰照片時剔除。
+3. **錯位群組**（一群照片互相連結但整組貼錯方向，如天花板特寫被優化到水平）：
+   - 先試 `python -X utf8 -u scripts/reinforce_ptgui_gui.py <pts>`（GUI 自動化：控制點 → 為所有重疊影像產生控制點 → F5 優化 → 存檔），品管室靠這招修好。
+   - 若優化仍收斂到錯位（庫存區案例）：做 contact sheet 對照每張照片的內容與優化後 yaw/pitch，把「內容是天花板/地板特寫、pitch 卻接近 0」的照片用 `exclude_blurry.remove_groups` 移除後重出。
+
+4. **重複紋理牆／近距離視差**（浪板牆、電梯門這種平面近拍，全域優化拉不回，牆面窗框交錯）：
+   - 優先找 `C:\ptgui_test\jobs\_good_pts_backup\` 的試用版時代人工整理專案當幾何基底，剔除其中的孤兒與錯位群組後重出（走道案例：備份幾何正確，只要移除 10 張被優化到水平的地板特寫＋2 張孤兒）。
+   - 平面近拍鬼影（二樓電梯門、橘柱殘影）：把跨越該平面上下的近拍照片移除做變體比較（`station-2f_varA/varB.pts`），接縫層數變少鬼影即消失；先出變體確認無破洞再套用。
+
+輔助知識：
+- .pts 控制點格式 `{"t":0,"0":[群組idx,張idx,x,y],"1":[...]}`；移除 imagegroups 必須重映射控制點索引與 anchorimagegroup。
+- **錯位群組的控制點數可能很高**（整組互聯成孤島後一起漂走），不能只看 cp=0；一定要 contact sheet 對照內容與 yaw/pitch。孤兒的典型特徵是多張停在同一個預設座標（如 y-57.5 p-2.1）。
+- 試用版存的 `.pts` 開頭是 `# PTGui Trial Project File`（加密格式，不能直接 JSON 編輯）；用 `scripts/convert_pts_gui.py`（GUI 開啟 → Ctrl+S）轉成授權版 JSON 後即可程式化編輯。
+- 樣板 blend `fillholes=True` 會把沒覆蓋的區域抹成灰霧；缺陷大多不是破洞而是上述照片問題。
+- PTGui 優化結果視窗是 `#32770` 對話框（只有「關閉」鈕），pywinauto 要用 win32 列舉找 modal，UIAWrapper 沒有 `child_window`。
+- 選單「專案 → 優化」有時點了沒觸發（PTGui CPU 不動、無進度視窗）；補救：對主視窗重新 set_focus 後再送一次 `{F5}`（`scripts/optimize_ptgui_gui.py` 已內建 fallback）。
+- 大圖輸出後 PTGui 可能還鎖檔（WinError 1224），複製要重試。
+- 只重出＋套用單站（不重新對齊）：`python -X utf8 -u scripts/stitch_apply_one.py <sid>`。
 
 ## 路徑
 
