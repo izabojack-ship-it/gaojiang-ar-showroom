@@ -126,6 +126,8 @@ python -X utf8 -u scripts/restitch_one_ptgui.py station-1f-qc
    - 二樓殘餘水平拼縫（v197）：2A 柱上段兩折（y5360 +55px、y5540 +34px 接到已對齊柱身）＋電梯左框 y6600（下段 +57/+36px）。腳本 `scripts/retouch_2f_remain.py`。
    - 二樓 2C 柱列微調（v199）：同一條 y≈5400 水平拼縫，2C＋橘梯整段上柱偏右（-12/−6px）、右側鄰柱上段偏左（+19px），必須分柱位移；上沿拉到 y≈4680 以免標籤附近再折。腳本 `scripts/retouch_2f_col2c.py`。
    - 二樓同列其餘柱（v200）：D 柱 +15、s6 鄰柱 +14、2C 左前方牆柱 +67、左側細柱 +27、遠側左 +11／右 −52。腳本 `scripts/retouch_2f_colrow.py`。
+   - 二樓柱列完整接縫（v201）：從 `*_pre_col2c` 重做。y=5400 上帶依高信心 NCC 逐欄位移且縫處不羽化（先前位移在縫上被羽化掉，段差看起來沒修）。2A y≈6600 浪管上下已對齊，塗抹假邊用縫外紋理重建。腳本 `scripts/retouch_2f_fullseam.py`。
+   - 二樓柱緣對齊（v202）：NCC 對浪板牆會鎖錯週期。改從 `*_pre_col2c` 依暗柱左右緣分緣平移上帶，接縫處全量不羽化。腳本 `scripts/retouch_2f_pillars.py`。
 
 5. **殘餘小接縫（重拼救不回時的像素級修補）**：對「線不齊的小細節」直接改 `環景成品圖/ptgui/` 大圖再 `apply_one`。工具在 `scripts/seam_retouch.py`（`grid` 子命令輸出帶座標格線的放大裁切，先定位再修）＋各站 `retouch_*.py`（自動備份 `*_pre_retouch.jpg`，可反覆調參重跑）：
    - `ramp_shift`：接縫一側整片有固定平移（牆面溝縫、白飾條錯層）→ 從接縫全量位移、往遠端線性衰減（走道 x9280 右移 -30px 案例）。
