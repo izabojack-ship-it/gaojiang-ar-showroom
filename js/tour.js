@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '207';
+const MEDIA_VERSION = '208';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -79,35 +79,10 @@ function mediaUrl(folder, file) {
   return `./media/${folder}/${encodeURIComponent(file)}?v=${MEDIA_VERSION}`;
 }
 
-/** 記憶體／核心數較低、或省流連線時，全程使用精簡環景，避免解 30MB／10240 大圖 */
+/** 預設高畫質：先精簡圖再開原圖。僅 ?lite=1 全程精簡。 */
 function detectLiteOnly() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('hq') === '1') return false;
-  if (params.get('lite') === '1') return true;
-
-  try {
-    const conn = navigator.connection;
-    if (conn?.saveData) return true;
-    const et = String(conn?.effectiveType || '');
-    if (et === 'slow-2g' || et === '2g' || et === '3g') return true;
-  } catch { /* ignore */ }
-
-  const mem = Number(navigator.deviceMemory);
-  if (mem && mem < 8) return true;
-
-  const cores = Number(navigator.hardwareConcurrency);
-  if (cores && cores < 6) return true;
-
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    if (gl) {
-      const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-      if (maxTex && maxTex < 8192) return true;
-    }
-  } catch { /* ignore */ }
-
-  return false;
+  return params.get('lite') === '1';
 }
 
 const LITE_ONLY = detectLiteOnly();
