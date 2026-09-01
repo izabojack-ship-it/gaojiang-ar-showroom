@@ -15,8 +15,10 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '206';
+const MEDIA_VERSION = '207';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
+const LITE_PANO_WIDTH = 4096;
+const LITE_PANO_HEIGHT = 2048;
 const DEFAULT_ZOOM = 42;
 const THUMBS_COLLAPSE_KEY = 'f360-thumbs-collapsed';
 const PANELS_COLLAPSE_KEY = 'f360-panels-collapsed';
@@ -76,6 +78,40 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function mediaUrl(folder, file) {
   return `./media/${folder}/${encodeURIComponent(file)}?v=${MEDIA_VERSION}`;
 }
+
+/** 記憶體／核心數較低、或省流連線時，全程使用精簡環景，避免解 30MB／10240 大圖 */
+function detectLiteOnly() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('hq') === '1') return false;
+  if (params.get('lite') === '1') return true;
+
+  try {
+    const conn = navigator.connection;
+    if (conn?.saveData) return true;
+    const et = String(conn?.effectiveType || '');
+    if (et === 'slow-2g' || et === '2g' || et === '3g') return true;
+  } catch { /* ignore */ }
+
+  const mem = Number(navigator.deviceMemory);
+  if (mem && mem < 8) return true;
+
+  const cores = Number(navigator.hardwareConcurrency);
+  if (cores && cores < 6) return true;
+
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (gl) {
+      const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      if (maxTex && maxTex < 8192) return true;
+    }
+  } catch { /* ignore */ }
+
+  return false;
+}
+
+const LITE_ONLY = detectLiteOnly();
+let panoUpgradeSeq = 0;
 
 function makePanoData(width, height, hfovDeg = 360, fullHeight = null, croppedY = 0) {
   const hfov = hfovDeg || 360;
@@ -532,6 +568,7 @@ async function switchScene(targetId, options = {}) {
   if (!target) return;
 
   isTransitioning = true;
+  panoUpgradeSeq += 1;
   autorotatePlugin?.stop();
   guide?.stopSpeech();
 
@@ -543,9 +580,9 @@ async function switchScene(targetId, options = {}) {
     fadeEl?.classList.add('is-out');
     await wait(420);
 
-    await viewer.setPanorama(target.panorama, {
+    await viewer.setPanorama(target.panoramaLite, {
       caption: target.title,
-      panoData: target.panoData,
+      panoData: target.panoDataLite,
       position: {
         yaw: target.defaultYaw,
         pitch: target.defaultPitch,
@@ -571,6 +608,7 @@ async function switchScene(targetId, options = {}) {
     fadeEl?.classList.add('is-in');
     await wait(420);
     fadeEl?.classList.remove('is-in');
+    upgradeToFullIfCapable(target);
   } catch (err) {
     console.error('[高將展間] 場景切換失敗', err);
     fadeEl?.classList.remove('is-out', 'is-in');
@@ -605,13 +643,20 @@ function initViewer(startScene) {
   const first = startScene || scenes[0];
   if (!first) return;
 
-  if (loaderSubEl) loaderSubEl.textContent = `正在載入 ${first.title}…`;
+  if (loaderSubEl) {
+    loaderSubEl.textContent = LITE_ONLY
+      ? `正在載入 ${first.title}（順暢模式）…`
+      : `正在載入 ${first.title}…`;
+  }
 
   viewer = new Viewer({
     container: 'viewer',
-    adapter: [EquirectangularAdapter, { blur: false }],
-    panorama: first.panorama,
-    panoData: first.panoData,
+    adapter: [EquirectangularAdapter, {
+      blur: false,
+      resolution: LITE_ONLY ? 32 : 64,
+    }],
+    panorama: first.panoramaLite,
+    panoData: first.panoDataLite,
     caption: first.title,
     loadingTxt: '載入高將展間環景中…',
     navbar: false,
@@ -620,15 +665,15 @@ function initViewer(startScene) {
     defaultZoomLvl: first.defaultZoom ?? DEFAULT_ZOOM,
     mousewheel: true,
     mousemove: true,
-    moveInertia: true,
+    moveInertia: !LITE_ONLY,
     moveSpeed: 0.85,
     zoomSpeed: 0.85,
     minFov: 18,
     maxFov: 86,
     canvasBackground: '#151c26',
     rendererParameters: {
-      antialias: true,
-      powerPreference: 'high-performance',
+      antialias: !LITE_ONLY,
+      powerPreference: LITE_ONLY ? 'default' : 'high-performance',
       alpha: false,
     },
     plugins: [
@@ -697,30 +742,69 @@ function initViewer(startScene) {
     updateThumbnails();
     activateGuideForScene(first, { initial: true });
     autorotatePlugin?.start();
+    upgradeToFullIfCapable(first);
   }, { once: true });
 
-  // 預載下一站即可，避免一次塞 15 張
+  // 只預載下一站精簡圖，避免一次塞數十 MB
   const idx = scenes.findIndex((s) => s.id === first.id);
   const preload = scenes[idx + 1] || scenes[1];
   if (preload && preload.id !== first.id) {
     const img = new Image();
-    img.src = preload.panorama;
+    img.src = preload.panoramaLite;
+  }
+}
+
+async function upgradeToFullIfCapable(scene) {
+  if (LITE_ONLY || !viewer || !scene?.panoramaFull) return;
+
+  const seq = ++panoUpgradeSeq;
+  const sceneId = scene.id;
+
+  try {
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('高畫質環景載入失敗'));
+      img.src = scene.panoramaFull;
+    });
+    if (seq !== panoUpgradeSeq || currentSceneId !== sceneId || isTransitioning) return;
+
+    const pos = viewer.getPosition();
+    const zoom = viewer.getZoomLevel();
+    await viewer.setPanorama(scene.panoramaFull, {
+      caption: scene.title,
+      panoData: scene.panoDataFull,
+      position: pos,
+      zoom,
+      transition: false,
+      showLoader: false,
+    });
+  } catch (err) {
+    if (seq === panoUpgradeSeq) {
+      console.warn('[高將展間] 高畫質環景升級略過', err);
+    }
   }
 }
 
 function mapStationRecord(record) {
+  const panoDataFull = makePanoData(
+    record.width,
+    record.height,
+    record.hfov_deg,
+    record.full_height,
+    record.cropped_y,
+  );
+  const panoDataLite = makePanoData(LITE_PANO_WIDTH, LITE_PANO_HEIGHT, record.hfov_deg);
   return {
     id: record.id,
     title: record.title,
-    panorama: mediaUrl('panoramas', record.file),
+    panorama: mediaUrl('panoramas-lite', record.file),
+    panoramaLite: mediaUrl('panoramas-lite', record.file),
+    panoramaFull: mediaUrl('panoramas', record.file),
     thumbnail: mediaUrl('thumbs', record.file),
-    panoData: makePanoData(
-      record.width,
-      record.height,
-      record.hfov_deg,
-      record.full_height,
-      record.cropped_y,
-    ),
+    panoData: panoDataLite,
+    panoDataLite,
+    panoDataFull,
     defaultYaw: record.default_yaw || '0deg',
     defaultPitch: record.default_pitch || '-5deg',
     defaultZoom: Number.isFinite(record.default_zoom) ? record.default_zoom : DEFAULT_ZOOM,
@@ -878,6 +962,7 @@ async function bootstrap() {
     }
 
     scenes = merged.map(mapStationRecord);
+    console.info('[高將展間] 環景模式', LITE_ONLY ? 'lite' : 'lite→full');
     if (thumbsToggleMetaEl) {
       thumbsToggleMetaEl.textContent = `${scenes.length} 站`;
     }

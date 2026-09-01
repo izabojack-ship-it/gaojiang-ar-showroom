@@ -55,6 +55,7 @@ Task Progress:
 - [ ] 5. 複製到 環景成品圖/ptgui/<標題>_ptgui.jpg
 - [ ] 6. Real-ESRGAN 優化 → 環景成品圖/ptgui_enhanced/<sid>_enhanced.jpg
 - [ ] 7. finish_gj 寫入 media/panoramas 與 thumbs（10240×5120、高將天底）
+- [ ] 7b. 同步精簡圖 `media/panoramas-lite/<sid>.jpg`（4096×2048，公開站先載這張）
 - [ ] 8. 更新 stations.json 尺寸，MEDIA_VERSION +1
 - [ ] 9. Ctrl+F5 開 http://localhost:8666 確認無浮水印、接縫與畫質
 ```
@@ -157,6 +158,7 @@ python -X utf8 -u scripts/restitch_one_ptgui.py station-1f-qc
 | 拼圖成品 | `環景成品圖/ptgui/` |
 | AI 成品 | `環景成品圖/ptgui_enhanced/` |
 | 展間背景 | `media/panoramas/<sid>.jpg` |
+| 精簡環景（公開站先載） | `media/panoramas-lite/<sid>.jpg`（4096×2048） |
 | 縮圖 | `media/thumbs/<sid>.jpg` |
 | 舊底備份 | `media/panoramas/_before_ptgui/` |
 | 參考放大專案 | `C:\程式開發\高將機械\machine-ai-upscale` |
@@ -184,7 +186,7 @@ python -X utf8 -u scripts/restitch_one_ptgui.py station-1f-qc
 推 `master` 即部署。只提交展間會用到的檔：
 
 ```powershell
-git add index.html js/tour.js js/guide.js css/tour.css media/stations.json media/panoramas/station-*.jpg media/thumbs/station-*.jpg .cursor/skills/gaojiang-ptgui-enhance/SKILL.md
+git add index.html js/tour.js js/guide.js css/tour.css media/stations.json media/panoramas/station-*.jpg media/panoramas-lite/station-*.jpg media/thumbs/station-*.jpg .cursor/skills/gaojiang-ptgui-enhance/SKILL.md
 git commit -m "更新 PTGui 授權版環景與 AI 優化背景，公開部署。"
 git push origin HEAD
 ```
