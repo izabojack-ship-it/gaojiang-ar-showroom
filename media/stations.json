@@ -11,54 +11,16 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓走道空間。這裡是廠區門口與內部動線交會處，您可以拖曳旋轉畫面、滾輪縮放，查看通道、棧板與貨架配置。"
+      "title": "高將精機廠股份有限公司-公司介紹",
+      "intro": "高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪，三十餘年來在高將全體同仁的努力奮鬥中，高將公司已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 之自有品牌行銷全世界，高將公司素以堅持高品質及專業技術，為業界所稱許；融合先進技術的高速精密沖床，以優異的性能，客製化服務，廣為國內外客戶所肯定。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。使命：打造客戶最信賴的沖床設備品牌，不斷創新改造產品，持續推動永續經營的競爭力，為工作伙伴及顧客創造榮耀與價值。本區為會議室、廠務辦公室、業務辦公室、副總辦公室。"
     },
     "points": [],
     "links": [
       {
         "id": "link-station-1f-corridor-next",
-        "target": "station-1f-line-left-new",
-        "position": {
-          "yaw": "125deg",
-          "pitch": "-18deg"
-        },
-        "label": "一樓生產線（左新機區） →"
-      }
-    ]
-  },
-  {
-    "id": "station-1f-line-left-new",
-    "title": "一樓生產線（左新機區）",
-    "file": "station-1f-line-left-new.jpg",
-    "width": 10240,
-    "height": 5120,
-    "photo_count": 81,
-    "default_yaw": "0deg",
-    "default_pitch": "-3deg",
-    "hfov_deg": 360,
-    "guide": {
-      "enabled": true,
-      "name": "高將副總",
-      "role": "廠區導覽",
-      "autoPlayIntro": true,
-      "intro": "歡迎來到一樓生產線左新機區。這裡展示新機與待出機台，您可以拖曳旋轉畫面、滾輪縮放，查看機台配置與走道動線。"
-    },
-    "points": [],
-    "links": [
-      {
-        "id": "link-station-1f-line-left-new-prev",
-        "target": "station-1f-corridor",
-        "position": {
-          "yaw": "-125deg",
-          "pitch": "-18deg"
-        },
-        "label": "← 一樓走道空間"
-      },
-      {
-        "id": "link-station-1f-line-left-new-next",
         "target": "station-1f-line-right-front",
         "position": {
           "yaw": "125deg",
@@ -80,21 +42,21 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓生產線右前半部。您可以拖曳旋轉畫面、滾輪縮放，查看前段加工機台與作業空間。"
+      "intro": "此區域為裝配製一組產線，配置最大載重 50 噸天車，適用於組裝高將 FMT 大型沖床機種。沖床從各部件：頭座總成組裝、中座及滑塊組裝、腳座組裝，再到三座結合、沖床電控系統配電、精度調整、試車、沖床品質精度檢驗、拆機包裝出貨，流程一次到位。"
     },
     "points": [],
     "links": [
       {
         "id": "link-station-1f-line-right-front-prev",
-        "target": "station-1f-line-left-new",
+        "target": "station-1f-corridor",
         "position": {
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓生產線（左新機區）"
+        "label": "← 一樓走道空間"
       },
       {
         "id": "link-station-1f-line-right-front-next",
@@ -119,10 +81,10 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓生產線右後半部。您可以拖曳旋轉畫面、滾輪縮放，查看中後段機台與產線配置。"
+      "intro": "此區域為裝配製一組和裝配製二組共同產線，配置 30～5 噸天車，適用於組裝高將 FMT 和 GH 型沖床，及大型結構件存放區。後方為噴漆區域，適用於沖床各部件噴漆上色。"
     },
     "points": [],
     "links": [
@@ -142,13 +104,13 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓週邊零件製造區 →"
+        "label": "一樓左方生產線 →"
       }
     ]
   },
   {
     "id": "station-1f-parts-mfg",
-    "title": "一樓週邊零件製造區",
+    "title": "一樓左方生產線",
     "file": "station-1f-parts-mfg.jpg",
     "width": 10240,
     "height": 5120,
@@ -158,10 +120,10 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓週邊零件製造區。這裡進行大型鑄件與週邊零件加工，您可以拖曳旋轉畫面、滾輪縮放，查看機座、貨架與天車動線。"
+      "intro": "此區域為裝配製二組產線，配置 30～5 噸天車，適用於組裝高將 GH 型沖床產線，後方區域為大型頭座總成件存放區。"
     },
     "points": [],
     "links": [
@@ -197,12 +159,76 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓品管室。這裡進行量測與檢驗作業，您可以拖曳旋轉畫面、滾輪縮放，查看工作台、量測設備與室內切時機。"
+      "intro": "歡迎來到我們的品管室。作為高速精密沖床的領導廠商，我們深知 micro-level（微米級）的極致精度是設備穩定運作與長久壽命的靈魂。品管室全區維持恆溫恆濕環境，並配備業界頂級的檢測與檢驗設備，嚴格把關每一道加工工序。以下為您展示本品管室的核心檢測量能。高將沖床最嚴苛的 JIS 特級精度檢驗標準，確保出廠的每一台沖床之平行度、垂直度、總和間隙，皆能發揮卓越的穩定度與精度表現。"
     },
-    "points": [],
+    "points": [
+      {
+        "id": "poi-qc-2d",
+        "title": "高規格二次元量測儀",
+        "body": "最大量測高度達 2 米，能精準捕捉大型構造件與複雜幾何圖形的關鍵尺寸。",
+        "position": {
+          "yaw": "-155deg",
+          "pitch": "-8deg"
+        }
+      },
+      {
+        "id": "poi-qc-granite",
+        "title": "超大型精密岩石量測平台",
+        "body": "具備 6 米 × 3 米的超大作業面積，採用高密度天然花崗岩，提供極致平整與低熱膨脹的基準面，確保大型床台與大尺寸零件的微米級檢驗精度。",
+        "position": {
+          "yaw": "48deg",
+          "pitch": "-18deg"
+        }
+      },
+      {
+        "id": "poi-qc-height",
+        "title": "垂直度量測儀器",
+        "body": "用於檢驗大型構件與床台的垂直度，把關高速精密沖床的組裝基準。",
+        "position": {
+          "yaw": "78deg",
+          "pitch": "-6deg"
+        }
+      },
+      {
+        "id": "poi-qc-roughness",
+        "title": "表面粗糙度檢測器",
+        "body": "量測加工面粗糙度，確認滑動與接觸面達到出廠精度要求。",
+        "position": {
+          "yaw": "118deg",
+          "pitch": "-12deg"
+        }
+      },
+      {
+        "id": "poi-qc-hardness",
+        "title": "金屬硬度檢測儀",
+        "body": "檢測關鍵零件硬度，確保熱處理與材料強度符合規範。",
+        "position": {
+          "yaw": "135deg",
+          "pitch": "-10deg"
+        }
+      },
+      {
+        "id": "poi-qc-demag",
+        "title": "磁力消除器",
+        "body": "消除加工後殘磁，避免量測誤差並保護精密零件。",
+        "position": {
+          "yaw": "-95deg",
+          "pitch": "-14deg"
+        }
+      },
+      {
+        "id": "poi-qc-gauges",
+        "title": "完整全套精密量具",
+        "body": "配備完整精密量具，支援各類尺寸、形位與日常檢驗作業。",
+        "position": {
+          "yaw": "-72deg",
+          "pitch": "-4deg"
+        }
+      }
+    ],
     "links": [
       {
         "id": "link-station-1f-qc-prev",
@@ -211,10 +237,49 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓週邊零件製造區"
+        "label": "← 一樓左方生產線"
       },
       {
         "id": "link-station-1f-qc-next",
+        "target": "station-1f-line-left-new",
+        "position": {
+          "yaw": "125deg",
+          "pitch": "-18deg"
+        },
+        "label": "一樓周邊設備生產線 →"
+      }
+    ]
+  },
+  {
+    "id": "station-1f-line-left-new",
+    "title": "一樓周邊設備生產線",
+    "file": "station-1f-line-left-new.jpg",
+    "width": 10240,
+    "height": 5120,
+    "photo_count": 81,
+    "default_yaw": "0deg",
+    "default_pitch": "-3deg",
+    "hfov_deg": 360,
+    "guide": {
+      "enabled": true,
+      "name": "高將導覽員",
+      "role": "廠區導覽",
+      "autoPlayIntro": true,
+      "intro": "此區域為周邊組生產線，高將自製生產：伺服送料機、齒輪式送料機、伺服整平機、主動式料架、整平機、開捲機，以及舉模臂和移模臂，滿足客戶全套沖壓生產線需求。"
+    },
+    "points": [],
+    "links": [
+      {
+        "id": "link-station-1f-line-left-new-prev",
+        "target": "station-1f-qc",
+        "position": {
+          "yaw": "-125deg",
+          "pitch": "-18deg"
+        },
+        "label": "← 一樓品管室"
+      },
+      {
+        "id": "link-station-1f-line-left-new-next",
         "target": "station-1f-parts-stock",
         "position": {
           "yaw": "125deg",
@@ -236,21 +301,21 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓半成品零件庫存區。這裡存放加工後待組裝的大型零件、模具與貨架物料。您可以拖曳旋轉畫面、滾輪縮放，查看天車、貨架與地面零件配置。"
+      "intro": "歡迎來到一樓倉庫半成品零件庫存區。這裡是我司生產運籌的核心樞紐，負責高效管理與妥善存放各類核心元件，為高速精密沖床的組裝流程提供最堅實的後盾。全區配置天車及堆高機作業，方便高效率、高安全地搬運與調度重型元件，大幅提升組裝前置作業的順暢度。透過完善的倉儲規劃與嚴格的現場管理，我們確保每一件沖床零件在進入組裝階段前都獲得最佳維護，全面把關最終產品的生產品質與交期效率。"
     },
     "points": [],
     "links": [
       {
         "id": "link-station-1f-parts-stock-prev",
-        "target": "station-1f-qc",
+        "target": "station-1f-line-left-new",
         "position": {
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓品管室"
+        "label": "← 一樓周邊設備生產線"
       },
       {
         "id": "link-station-1f-parts-stock-next",
@@ -275,10 +340,11 @@
     "hfov_deg": 360,
     "guide": {
       "enabled": true,
-      "name": "高將副總",
+      "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到二樓置物區。這裡存放零件、棧板與貨架物料，您可以拖曳旋轉畫面、滾輪縮放，查看天車、貨架與走道配置。"
+      "title": "二樓倉庫半成品零件庫存區",
+      "intro": "歡迎來到導覽的最後一站：二樓倉庫半成品零件庫存區。這裡是我們優化廠房空間與物料分流管理的核心區域，負責存放各式零組件、棧板與貨架物料，確保生產線的後勤補給源源不絕。本區具備以下四大特色與配置：高密度鋼構貨架系統，採用多層重型與中型貨架，極大化垂直儲放空間，讓各類零組件能依規範分類歸位，維持環境整潔與作業效率。寬敞中央作業走道，規劃明亮且寬敞的通道空間，方便搬運設備與作業人員安全通行，實現快速存取與精準盤點。完整天車吊運涵蓋，上方配置天車和堆高機設備，即使位於二樓，也能輕鬆安全地進行重型物料與大件棧板的吊運與移位。嚴謹的定置與標示管理，結合 ERP 系統進行物料定位管理，確保每一件機件備品都能快速尋獲，進一步提升高速精密沖床的組裝備料效率。"
     },
     "points": [],
     "links": [

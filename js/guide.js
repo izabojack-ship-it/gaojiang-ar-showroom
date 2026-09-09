@@ -13,8 +13,8 @@ const GUIDE_CHANNEL = 'f360-guide-overrides';
 /** 公司介紹（點進網址的開場旁白），中英文對照 */
 export const COMPANY_INTRO = {
   zh: {
-    title: '高將實境 AR 展間',
-    text: '歡迎來到高將實境 AR 展間。目前為單站環景測試，您可以拖曳旋轉、滾輪縮放，體驗 360° 虛擬導覽。後續會依廠區動線補上更多展站與熱點介紹。',
+    title: '高將精機廠股份有限公司-公司介紹',
+    text: '高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪。三十餘年來，高將已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 自有品牌行銷全世界。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。',
   },
   en: {
     title: 'Gaojiang AR Showroom',
@@ -370,7 +370,7 @@ export function createGuideController({
     videoEl.muted = false;
     videoPlate = document.createElement('div');
     videoPlate.className = 'f360-gv__plate';
-    videoPlate.textContent = els.name?.textContent || '高將副總';
+    videoPlate.textContent = els.name?.textContent || '高將導覽員';
     videoBox.append(videoEl, videoPlate);
     els.root?.appendChild(videoBox);
 
@@ -823,8 +823,8 @@ export function createGuideController({
 
   function isMaleVoice(v) {
     const n = `${v.name || ''} ${v.voiceURI || ''}`;
-    if (/female|woman|girl|hsiao|hanhan|yating|xiaoxiao|xiaoyi|jenny|aria|zira/i.test(n)) return false;
-    if (/male|man|boy|yunjhe|yunyang|yunxi|yunjian|guy|davis|tony|kangkang|danny/i.test(n)) return true;
+    if (/female|woman|girl|hsiao|hanhan|yating|xiaoxiao|xiaoyi|xiaoxuan|xiaohan|jenny|aria|zira|samantha|susan|linda|huihui/i.test(n)) return false;
+    if (/male|man|boy|yunjhe|yunyang|yunxi|yunjian|yunfeng|yunhao|yunye|yunze|guy|davis|tony|andrew|brian|kangkang|danny|zhiwei|yunjian/i.test(n)) return true;
     return null;
   }
 
@@ -835,8 +835,8 @@ export function createGuideController({
     const preferMale = (list) => {
       const male = list.find((v) => isMaleVoice(v) === true);
       if (male) return male;
-      const unknown = list.find((v) => isMaleVoice(v) === null);
-      return unknown || list[0] || null;
+      // 不明性別可當後備；已知女聲一律不用
+      return list.find((v) => isMaleVoice(v) === null) || null;
     };
     if (prefLang === 'en') {
       return preferMale(byLang(/en(-|_)?US/i))
@@ -902,9 +902,9 @@ export function createGuideController({
     stopRecorded();
     const utter = new SpeechSynthesisUtterance(text.trim());
     utter.lang = ttsLang === 'en' ? 'en-US' : 'zh-TW';
-    // 男性副總：略慢、略低沉，沉穩專業
+    // 男聲導覽員：略慢、略低沉
     utter.rate = ttsLang === 'en' ? 0.96 : 0.94;
-    utter.pitch = 0.82;
+    utter.pitch = 0.78;
     const voice = pickVoice(ttsLang);
     if (voice) utter.voice = voice;
 
@@ -968,7 +968,7 @@ export function createGuideController({
     }
     els.poiList.hidden = false;
     els.poiList.innerHTML = `
-      <p class="f360-guide__poi-label">機台單點介紹</p>
+      <p class="f360-guide__poi-label">重點設備介紹</p>
       <div class="f360-guide__poi-chips">
         ${points.map((p) => `
           <button type="button" class="f360-guide__poi-chip${p.id === activePointId ? ' is-active' : ''}" data-poi-id="${p.id}">
@@ -1042,15 +1042,17 @@ export function createGuideController({
     companyIntroPending = false;
 
     showPanel();
-    if (els.name) els.name.textContent = guide.name || '高將副總';
+    if (els.name) els.name.textContent = guide.name || '高將導覽員';
     if (els.role) els.role.textContent = guide.role || '廠區導覽';
-    if (videoPlate) videoPlate.textContent = guide.name || '高將副總';
+    if (videoPlate) videoPlate.textContent = guide.name || '高將導覽員';
 
     // 有英文文案時依目前語言切換；沒有則一律用中文
     const useEn = lang === 'en' && guide.introEn;
     const introText = (useEn ? guide.introEn : guide.intro) || '';
     setScript({
-      title: useEn ? `${scene.title} · Introduction` : `${scene.title} · 場景介紹`,
+      title: useEn
+        ? (guide.titleEn || `${scene.title} · Introduction`)
+        : (guide.title || `${scene.title} · 場景介紹`),
       text: introText,
       pointId: null,
     });
@@ -1238,7 +1240,7 @@ export function buildInfoMarkerHtml(point) {
         <span class="info-marker__core">i</span>
       </div>
       <div class="info-marker__chip">
-        <span class="info-marker__tag">機台介紹</span>
+        <span class="info-marker__tag">${escapeHtml(point.tag || '設備介紹')}</span>
         <span class="info-marker__name">${escapeHtml(point.title)}</span>
       </div>
     </div>`;

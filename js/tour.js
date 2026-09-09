@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '208';
+const MEDIA_VERSION = '211';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -215,7 +215,7 @@ function updateRouteChrome() {
       const hasPoints = (scene.points || []).length > 0;
       hint.textContent = next
         ? (hasPoints
-          ? '點擊藍色熱點聽機台介紹，金色熱點可前往下一站'
+          ? '點擊藍色熱點聽設備介紹，金色熱點可前往下一站'
           : '旋轉畫面，點擊金色熱點或下方按鈕前往')
         : '您已走完整條建議動線，可從底部站點再探訪';
     }
