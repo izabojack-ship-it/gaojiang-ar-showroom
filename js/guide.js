@@ -152,6 +152,22 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
+  const AUDIO_VERSION = '212';
+  /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
+  const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
+
+  function spokenZh(text) {
+    let out = String(text || '').replaceAll('高將', '高降');
+    const holders = WEI4_KEEP.map((phrase, i) => {
+      const token = `\u0001${i}\u0002`;
+      out = out.split(phrase).join(token);
+      return [token, phrase];
+    });
+    out = out.replaceAll('為', '維');
+    for (const [token, phrase] of holders) out = out.split(token).join(phrase);
+    return out;
+  }
+
   /** 預生成語音（edge-tts 神經語音）：比瀏覽器 TTS 自然，缺檔時自動退回 TTS */
   const AUDIO_BASE = './media/guide/audio/';
   let audioEl = null;
@@ -686,7 +702,7 @@ export function createGuideController({
     stopVideo();
     if (speechSupported) window.speechSynthesis.cancel();
     ensureAudioEl();
-    const url = `${AUDIO_BASE}${encodeURIComponent(key)}.mp3`;
+    const url = `${AUDIO_BASE}${encodeURIComponent(key)}.mp3?v=${AUDIO_VERSION}`;
     audioEl.src = url;
     preparePcm(url).catch(() => { pcmData = null; pcmRate = 0; });
     try { await audioCtx?.resume(); } catch { /* ignore */ }
@@ -900,7 +916,8 @@ export function createGuideController({
     // 互斥保險：合成語音開講前，影片與錄音一律停止
     stopVideo();
     stopRecorded();
-    const utter = new SpeechSynthesisUtterance(text.trim());
+    const spoken = ttsLang === 'en' ? text.trim() : spokenZh(text.trim());
+    const utter = new SpeechSynthesisUtterance(spoken);
     utter.lang = ttsLang === 'en' ? 'en-US' : 'zh-TW';
     // 男聲導覽員：略慢、略低沉
     utter.rate = ttsLang === 'en' ? 0.96 : 0.94;
