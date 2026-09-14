@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '218';
+const MEDIA_VERSION = '219';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
