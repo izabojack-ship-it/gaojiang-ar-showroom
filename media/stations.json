@@ -15,7 +15,11 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "title": "高將精機廠股份有限公司-公司介紹",
-      "intro": "高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪，三十餘年來在高將全體同仁的努力奮鬥中，高將公司已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 之自有品牌行銷全世界，高將公司素以堅持高品質及專業技術，為業界所稱許；融合先進技術的高速精密沖床，以優異的性能，客製化服務，廣為國內外客戶所肯定。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。使命：打造客戶最信賴的沖床設備品牌，不斷創新改造產品，持續推動永續經營的競爭力，為工作伙伴及顧客創造榮耀與價值。本區為會議室、廠務辦公室、業務辦公室、副總辦公室。"
+      "intro": "高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪，三十餘年來在高將全體同仁的努力奮鬥中，高將公司已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 之自有品牌行銷全世界，高將公司素以堅持高品質及專業技術，為業界所稱許；融合先進技術的高速精密沖床，以優異的性能，客製化服務，廣為國內外客戶所肯定。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。使命：打造客戶最信賴的沖床設備品牌，不斷創新改造產品，持續推動永續經營的競爭力，為工作伙伴及顧客創造榮耀與價值。本區為會議室、廠務辦公室、業務辦公室、副總辦公室。",
+      "titleEn": "Gaojiang Precision Machinery Co., Ltd. — Company Introduction",
+      "introEn": "Gaojiang Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping. Through the dedicated efforts of all Gaojiang colleagues over more than thirty years, the company has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under its own FAIR OAKS brand. Gaojiang is widely recognized in the industry for its commitment to high quality and professional expertise. Its high-speed precision presses, combining advanced technology, outstanding performance, and customized service, are highly regarded by customers at home and abroad. Vision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility. Mission: to build the most trusted press-equipment brand for customers, continuously innovate and improve products, keep advancing sustainable competitiveness, and create honor and value for colleagues and customers. This area houses the meeting rooms, plant-affairs office, sales office, and deputy general manager's office.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -26,9 +30,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓生產線（右前半部） →"
+        "label": "一樓生產線（右前半部） →",
+        "labelEn": "1F Production Line (Right Front) →"
       }
-    ]
+    ],
+    "titleEn": "1F Corridor"
   },
   {
     "id": "station-1f-line-right-front",
@@ -45,7 +51,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "此區域為裝配製一組產線，配置最大載重 50 噸天車，適用於組裝高將 FMT 大型沖床機種。沖床從各部件：頭座總成組裝、中座及滑塊組裝、腳座組裝，再到三座結合、沖床電控系統配電、精度調整、試車、沖床品質精度檢驗、拆機包裝出貨，流程一次到位。"
+      "intro": "此區域為裝配製一組產線，配置最大載重 50 噸天車，適用於組裝高將 FMT 大型沖床機種。沖床從各部件：頭座總成組裝、中座及滑塊組裝、腳座組裝，再到三座結合、沖床電控系統配電、精度調整、試車、沖床品質精度檢驗、拆機包裝出貨，流程一次到位。",
+      "introEn": "This area is Assembly Line Group 1, equipped with an overhead crane of up to 50 tons, used to assemble Gaojiang FMT large press models. The press goes through every stage in one complete flow: ram-head assembly, bolster and slide assembly, foot-frame assembly, joining of the three main sections, electrical control wiring, precision adjustment, trial run, quality and accuracy inspection, then disassembly, packing, and shipment.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -56,7 +65,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓走道空間"
+        "label": "← 一樓走道空間",
+        "labelEn": "← 1F Corridor"
       },
       {
         "id": "link-station-1f-line-right-front-next",
@@ -65,9 +75,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓生產線（右後半部） →"
+        "label": "一樓生產線（右後半部） →",
+        "labelEn": "1F Production Line (Right Rear) →"
       }
-    ]
+    ],
+    "titleEn": "1F Production Line (Right Front)"
   },
   {
     "id": "station-1f-line-right-back",
@@ -84,7 +96,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "此區域為裝配製一組和裝配製二組共同產線，配置 30～5 噸天車，適用於組裝高將 FMT 和 GH 型沖床，及大型結構件存放區。後方為噴漆區域，適用於沖床各部件噴漆上色。"
+      "intro": "此區域為裝配製一組和裝配製二組共同產線，配置 30～5 噸天車，適用於組裝高將 FMT 和 GH 型沖床，及大型結構件存放區。後方為噴漆區域，適用於沖床各部件噴漆上色。",
+      "introEn": "This area is the shared production line of Assembly Line Groups 1 and 2, equipped with 30- to 5-ton overhead cranes. It is used to assemble Gaojiang FMT and GH presses, and also serves as a storage area for large structural parts. The rear is the painting area, where press components are painted and finished.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -95,7 +110,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓生產線（右前半部）"
+        "label": "← 一樓生產線（右前半部）",
+        "labelEn": "← 1F Production Line (Right Front)"
       },
       {
         "id": "link-station-1f-line-right-back-next",
@@ -104,9 +120,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓左方生產線 →"
+        "label": "一樓左方生產線 →",
+        "labelEn": "1F Left Production Line →"
       }
-    ]
+    ],
+    "titleEn": "1F Production Line (Right Rear)"
   },
   {
     "id": "station-1f-parts-mfg",
@@ -123,7 +141,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "此區域為裝配製二組產線，配置 30～5 噸天車，適用於組裝高將 GH 型沖床產線，後方區域為大型頭座總成件存放區。"
+      "intro": "此區域為裝配製二組產線，配置 30～5 噸天車，適用於組裝高將 GH 型沖床產線，後方區域為大型頭座總成件存放區。",
+      "introEn": "This area is Assembly Line Group 2, equipped with 30- to 5-ton overhead cranes, used to assemble Gaojiang GH-series presses. The rear area is a storage zone for large ram-head assemblies.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -134,7 +155,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓生產線（右後半部）"
+        "label": "← 一樓生產線（右後半部）",
+        "labelEn": "← 1F Production Line (Right Rear)"
       },
       {
         "id": "link-station-1f-parts-mfg-next",
@@ -143,9 +165,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓品管室 →"
+        "label": "一樓品管室 →",
+        "labelEn": "1F Quality Control Room →"
       }
-    ]
+    ],
+    "titleEn": "1F Left Production Line"
   },
   {
     "id": "station-1f-qc",
@@ -162,7 +186,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到我們的品管室。作為高速精密沖床的領導廠商，我們深知 micro-level（微米級）的極致精度是設備穩定運作與長久壽命的靈魂。品管室全區維持恆溫恆濕環境，並配備業界頂級的檢測與檢驗設備，嚴格把關每一道加工工序。以下為您展示本品管室的核心檢測量能。高將沖床最嚴苛的 JIS 特級精度檢驗標準，確保出廠的每一台沖床之平行度、垂直度、總和間隙，皆能發揮卓越的穩定度與精度表現。"
+      "intro": "歡迎來到我們的品管室。作為高速精密沖床的領導廠商，我們深知 micro-level（微米級）的極致精度是設備穩定運作與長久壽命的靈魂。品管室全區維持恆溫恆濕環境，並配備業界頂級的檢測與檢驗設備，嚴格把關每一道加工工序。以下為您展示本品管室的核心檢測量能。高將沖床最嚴苛的 JIS 特級精度檢驗標準，確保出廠的每一台沖床之平行度、垂直度、總和間隙，皆能發揮卓越的穩定度與精度表現。",
+      "introEn": "Welcome to our Quality Control room. As a leading manufacturer of high-speed precision presses, we know that micron-level accuracy is the soul of stable operation and long service life. The entire QC room is kept at constant temperature and humidity, and is equipped with top-tier inspection instruments to strictly control every machining process. The following highlights the core inspection capability of this QC room. Gaojiang presses are inspected to the most stringent JIS Extra-class accuracy standards, ensuring that the parallelism, perpendicularity, and total clearance of every press leaving the factory deliver outstanding stability and precision.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [
       {
@@ -172,7 +199,9 @@
         "position": {
           "yaw": "-155deg",
           "pitch": "-8deg"
-        }
+        },
+        "titleEn": "High-spec 2D measuring instrument",
+        "bodyEn": "Maximum measuring height of 2 meters, accurately capturing critical dimensions of large structural parts and complex geometries."
       },
       {
         "id": "poi-qc-granite",
@@ -181,7 +210,9 @@
         "position": {
           "yaw": "48deg",
           "pitch": "-18deg"
-        }
+        },
+        "titleEn": "Extra-large precision granite measuring table",
+        "bodyEn": "A 6 m × 3 m working area of high-density natural granite provides an ultra-flat, low-thermal-expansion reference surface for micron-level inspection of large beds and oversized parts."
       },
       {
         "id": "poi-qc-height",
@@ -190,7 +221,9 @@
         "position": {
           "yaw": "78deg",
           "pitch": "-6deg"
-        }
+        },
+        "titleEn": "Perpendicularity measuring instrument",
+        "bodyEn": "Used to inspect the perpendicularity of large components and beds, safeguarding the assembly datum of high-speed precision presses."
       },
       {
         "id": "poi-qc-roughness",
@@ -199,7 +232,9 @@
         "position": {
           "yaw": "118deg",
           "pitch": "-12deg"
-        }
+        },
+        "titleEn": "Surface roughness tester",
+        "bodyEn": "Measures machined-surface roughness to confirm that sliding and contact faces meet factory accuracy requirements."
       },
       {
         "id": "poi-qc-hardness",
@@ -208,7 +243,9 @@
         "position": {
           "yaw": "135deg",
           "pitch": "-10deg"
-        }
+        },
+        "titleEn": "Metal hardness tester",
+        "bodyEn": "Checks the hardness of key parts to ensure heat treatment and material strength meet specifications."
       },
       {
         "id": "poi-qc-demag",
@@ -217,7 +254,9 @@
         "position": {
           "yaw": "-95deg",
           "pitch": "-14deg"
-        }
+        },
+        "titleEn": "Demagnetizer",
+        "bodyEn": "Removes residual magnetism after machining to avoid measurement error and protect precision parts."
       },
       {
         "id": "poi-qc-gauges",
@@ -226,7 +265,9 @@
         "position": {
           "yaw": "-72deg",
           "pitch": "-4deg"
-        }
+        },
+        "titleEn": "Complete set of precision gauges",
+        "bodyEn": "A full suite of precision measuring tools supporting dimensional, geometric, and daily inspection work."
       }
     ],
     "links": [
@@ -237,7 +278,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓左方生產線"
+        "label": "← 一樓左方生產線",
+        "labelEn": "← 1F Left Production Line"
       },
       {
         "id": "link-station-1f-qc-next",
@@ -246,9 +288,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓周邊設備生產線 →"
+        "label": "一樓周邊設備生產線 →",
+        "labelEn": "1F Peripheral Equipment Line →"
       }
-    ]
+    ],
+    "titleEn": "1F Quality Control Room"
   },
   {
     "id": "station-1f-line-left-new",
@@ -265,7 +309,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "此區域為周邊組生產線，高將自製生產：伺服送料機、齒輪式送料機、伺服整平機、主動式料架、整平機、開捲機，以及舉模臂和移模臂，滿足客戶全套沖壓生產線需求。"
+      "intro": "此區域為周邊組生產線，高將自製生產：伺服送料機、齒輪式送料機、伺服整平機、主動式料架、整平機、開捲機，以及舉模臂和移模臂，滿足客戶全套沖壓生產線需求。",
+      "introEn": "This area is the peripheral-equipment production line. Gaojiang manufactures in-house: servo feeders, gear feeders, servo levelers, powered decoilers, levelers, uncoilers, as well as die-lifting and die-transfer arms, meeting customers' needs for a complete stamping production line.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -276,7 +323,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓品管室"
+        "label": "← 一樓品管室",
+        "labelEn": "← 1F Quality Control Room"
       },
       {
         "id": "link-station-1f-line-left-new-next",
@@ -285,9 +333,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "一樓半成品零件庫存區 →"
+        "label": "一樓半成品零件庫存區 →",
+        "labelEn": "1F Semi-finished Parts Warehouse →"
       }
-    ]
+    ],
+    "titleEn": "1F Peripheral Equipment Line"
   },
   {
     "id": "station-1f-parts-stock",
@@ -304,7 +354,10 @@
       "name": "高將導覽員",
       "role": "廠區導覽",
       "autoPlayIntro": true,
-      "intro": "歡迎來到一樓倉庫半成品零件庫存區。這裡是我司生產運籌的核心樞紐，負責高效管理與妥善存放各類核心元件，為高速精密沖床的組裝流程提供最堅實的後盾。全區配置天車及堆高機作業，方便高效率、高安全地搬運與調度重型元件，大幅提升組裝前置作業的順暢度。透過完善的倉儲規劃與嚴格的現場管理，我們確保每一件沖床零件在進入組裝階段前都獲得最佳維護，全面把關最終產品的生產品質與交期效率。"
+      "intro": "歡迎來到一樓倉庫半成品零件庫存區。這裡是我司生產運籌的核心樞紐，負責高效管理與妥善存放各類核心元件，為高速精密沖床的組裝流程提供最堅實的後盾。全區配置天車及堆高機作業，方便高效率、高安全地搬運與調度重型元件，大幅提升組裝前置作業的順暢度。透過完善的倉儲規劃與嚴格的現場管理，我們確保每一件沖床零件在進入組裝階段前都獲得最佳維護，全面把關最終產品的生產品質與交期效率。",
+      "introEn": "Welcome to the first-floor warehouse for semi-finished parts. This is the core hub of our production logistics, efficiently managing and storing key components to provide the strongest support for high-speed precision press assembly. The area is equipped with overhead cranes and forklifts for efficient, safe handling and scheduling of heavy parts, greatly improving pre-assembly flow. Through thorough warehouse planning and strict on-site management, we ensure every press part is well maintained before assembly, fully safeguarding final product quality and delivery.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -315,7 +368,8 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓周邊設備生產線"
+        "label": "← 一樓周邊設備生產線",
+        "labelEn": "← 1F Peripheral Equipment Line"
       },
       {
         "id": "link-station-1f-parts-stock-next",
@@ -324,9 +378,11 @@
           "yaw": "125deg",
           "pitch": "-18deg"
         },
-        "label": "二樓置物區 →"
+        "label": "二樓置物區 →",
+        "labelEn": "2F Storage Area →"
       }
-    ]
+    ],
+    "titleEn": "1F Semi-finished Parts Warehouse"
   },
   {
     "id": "station-2f",
@@ -344,7 +400,11 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "title": "二樓倉庫半成品零件庫存區",
-      "intro": "歡迎來到導覽的最後一站：二樓倉庫半成品零件庫存區。這裡是我們優化廠房空間與物料分流管理的核心區域，負責存放各式零組件、棧板與貨架物料，確保生產線的後勤補給源源不絕。本區具備以下四大特色與配置：高密度鋼構貨架系統，採用多層重型與中型貨架，極大化垂直儲放空間，讓各類零組件能依規範分類歸位，維持環境整潔與作業效率。寬敞中央作業走道，規劃明亮且寬敞的通道空間，方便搬運設備與作業人員安全通行，實現快速存取與精準盤點。完整天車吊運涵蓋，上方配置天車和堆高機設備，即使位於二樓，也能輕鬆安全地進行重型物料與大件棧板的吊運與移位。嚴謹的定置與標示管理，結合 ERP 系統進行物料定位管理，確保每一件機件備品都能快速尋獲，進一步提升高速精密沖床的組裝備料效率。"
+      "intro": "歡迎來到導覽的最後一站：二樓倉庫半成品零件庫存區。這裡是我們優化廠房空間與物料分流管理的核心區域，負責存放各式零組件、棧板與貨架物料，確保生產線的後勤補給源源不絕。本區具備以下四大特色與配置：高密度鋼構貨架系統，採用多層重型與中型貨架，極大化垂直儲放空間，讓各類零組件能依規範分類歸位，維持環境整潔與作業效率。寬敞中央作業走道，規劃明亮且寬敞的通道空間，方便搬運設備與作業人員安全通行，實現快速存取與精準盤點。完整天車吊運涵蓋，上方配置天車和堆高機設備，即使位於二樓，也能輕鬆安全地進行重型物料與大件棧板的吊運與移位。嚴謹的定置與標示管理，結合 ERP 系統進行物料定位管理，確保每一件機件備品都能快速尋獲，進一步提升高速精密沖床的組裝備料效率。",
+      "titleEn": "2F Warehouse — Semi-finished Parts",
+      "introEn": "Welcome to the last stop of the tour: the second-floor warehouse for semi-finished parts. This is our core area for optimizing plant space and material flow, storing components, pallets, and racked materials so the production line is continuously supplied. This area has four key features: a high-density steel racking system using multi-level heavy- and medium-duty racks to maximize vertical storage, with parts classified and stored by specification to keep the area tidy and efficient; a wide central working aisle, bright and spacious for safe passage of handling equipment and staff, enabling fast access and accurate inventory checks; full overhead-crane coverage, with cranes and forklifts so even on the second floor, heavy materials and large pallets can be lifted and moved safely; and rigorous location and labeling management, combined with the ERP system for material positioning, so every spare part can be found quickly, further improving kitting efficiency for high-speed precision press assembly.",
+      "nameEn": "Gaojiang Guide",
+      "roleEn": "Factory tour"
     },
     "points": [],
     "links": [
@@ -355,8 +415,10 @@
           "yaw": "-125deg",
           "pitch": "-18deg"
         },
-        "label": "← 一樓半成品零件庫存區"
+        "label": "← 一樓半成品零件庫存區",
+        "labelEn": "← 1F Semi-finished Parts Warehouse"
       }
-    ]
+    ],
+    "titleEn": "2F Storage Area"
   }
 ]

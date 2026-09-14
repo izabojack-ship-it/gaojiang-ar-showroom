@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '215';
+const MEDIA_VERSION = '216';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -102,11 +102,103 @@ function makePanoData(width, height, hfovDeg = 360, fullHeight = null, croppedY 
   };
 }
 
-function floorOf(title) {
-  if (title.includes('測試') || title.includes('廠區') || title.startsWith('高將')) return '高將廠區';
-  if (title.startsWith('二樓')) return '二樓';
-  if (title.startsWith('工廠')) return '戶外入口';
-  return '一樓';
+function getUiLang() {
+  if (guide?.getLang) return guide.getLang();
+  try {
+    return localStorage.getItem('f360-guide-lang') === 'en' ? 'en' : 'zh';
+  } catch {
+    return 'zh';
+  }
+}
+
+function sceneTitle(scene) {
+  if (!scene) return '';
+  return getUiLang() === 'en' && scene.titleEn ? scene.titleEn : scene.title;
+}
+
+function linkLabel(link) {
+  if (!link) return '';
+  return getUiLang() === 'en' && link.labelEn ? link.labelEn : (link.label || '');
+}
+
+function floorOf(sceneOrTitle) {
+  const title = typeof sceneOrTitle === 'string' ? sceneOrTitle : (sceneOrTitle?.title || '');
+  const en = getUiLang() === 'en';
+  if (title.includes('測試') || title.includes('廠區') || title.startsWith('高將')) {
+    return en ? 'Gaojiang Plant' : '高將廠區';
+  }
+  if (title.startsWith('二樓')) return en ? '2F' : '二樓';
+  if (title.startsWith('工廠')) return en ? 'Outdoor' : '戶外入口';
+  return en ? '1F' : '一樓';
+}
+
+const UI_COPY = {
+  zh: {
+    progress: (i, n) => `導覽進度 ${i} / ${n}`,
+    start: '已是起點',
+    end: '已完成全程',
+    terminal: '終點',
+    nextHintPoints: '點擊藍色熱點聽設備介紹，金色熱點可前往下一站',
+    nextHint: '旋轉畫面，點擊金色熱點或下方按鈕前往',
+    doneHint: '您已走完整條建議動線，可從底部站點再探訪',
+    showInfo: '顯示資訊',
+    hideInfo: '收合資訊',
+    showInfoScene: (t) => `顯示資訊 · ${t}`,
+    portalPrev: '返回上一站',
+    portalNext: '前往下一站',
+    portalPrevShort: '返回',
+    portalNextShort: '前往',
+    nextTag: '建議下一站',
+    gotoNext: '前往下一站',
+    prevKicker: '上一站',
+    nextKicker: '下一站',
+    reset: '重設視角',
+    thumbs: '展區動線',
+    stations: (n) => `${n} 站`,
+    thumbAria: (i, name) => `第 ${i} 站 ${name}`,
+    collapseRoute: '收合展區動線',
+    expandRoute: '展開展區動線',
+    radar: '閒置自動旋轉 · 拖曳可暫停',
+    brandEyebrow: '虛擬實境工廠導覽',
+    loading: (name) => `正在載入 ${name}…`,
+    loadingLite: (name) => `正在載入 ${name}（順暢模式）…`,
+    loadingPano: '載入高將展間環景中…',
+  },
+  en: {
+    progress: (i, n) => `Progress ${i} / ${n}`,
+    start: 'Start of tour',
+    end: 'Tour complete',
+    terminal: 'End',
+    nextHintPoints: 'Tap blue hotspots for equipment, gold to go to the next stop',
+    nextHint: 'Look around, then tap a gold hotspot or the button below',
+    doneHint: 'You have finished the suggested route. Use the stops below to revisit.',
+    showInfo: 'Show info',
+    hideInfo: 'Hide info',
+    showInfoScene: (t) => `Show info · ${t}`,
+    portalPrev: 'Previous stop',
+    portalNext: 'Next stop',
+    portalPrevShort: 'Back',
+    portalNextShort: 'Next',
+    nextTag: 'Next stop',
+    gotoNext: 'Go to next stop',
+    prevKicker: 'Previous',
+    nextKicker: 'Next',
+    reset: 'Reset view',
+    thumbs: 'Tour route',
+    stations: (n) => `${n} stops`,
+    thumbAria: (i, name) => `Stop ${i}: ${name}`,
+    collapseRoute: 'Collapse route',
+    expandRoute: 'Expand route',
+    radar: 'Auto-rotate when idle · drag to pause',
+    brandEyebrow: 'Virtual factory tour',
+    loading: (name) => `Loading ${name}…`,
+    loadingLite: (name) => `Loading ${name} (smooth mode)…`,
+    loadingPano: 'Loading Gaojiang panorama…',
+  },
+};
+
+function t() {
+  return UI_COPY[getUiLang()] || UI_COPY.zh;
 }
 
 function getScene(id) {
@@ -129,8 +221,9 @@ function linkDirection(scene, link) {
 }
 
 function buildPortalMarkerHtml(link, direction) {
-  const name = cleanLabel(link.label);
-  const dirText = direction === 'prev' ? '返回上一站' : '前往下一站';
+  const name = cleanLabel(linkLabel(link));
+  const copy = t();
+  const dirText = direction === 'prev' ? copy.portalPrev : copy.portalNext;
   return `
     <div class="portal-marker portal-marker--${direction}" aria-hidden="true">
       <div class="portal-marker__pulse">
@@ -156,7 +249,7 @@ function buildPortalMarkers(scene) {
       anchor: 'center bottom',
       className: 'portal-marker-wrap',
       tooltip: {
-        content: `${direction === 'prev' ? '返回' : '前往'}：${cleanLabel(link.label)}`,
+        content: `${direction === 'prev' ? t().portalPrevShort : t().portalNextShort}：${cleanLabel(linkLabel(link))}`,
         className: 'f360-tooltip',
         position: 'top center',
         trigger: 'hover',
@@ -164,7 +257,7 @@ function buildPortalMarkers(scene) {
       data: {
         kind: 'portal',
         targetSceneId: link.target,
-        label: link.label,
+        label: linkLabel(link),
         direction,
       },
     };
@@ -174,7 +267,7 @@ function buildPortalMarkers(scene) {
 function buildMarkersForScene(scene) {
   return [
     ...buildPortalMarkers(scene),
-    ...(guideApi ? guideApi.buildPointMarkers(scene) : []),
+    ...(guideApi ? guideApi.buildPointMarkers(scene, getUiLang()) : []),
   ];
 }
 
@@ -193,16 +286,18 @@ function updateRouteChrome() {
   const total = scenes.length;
   const pct = ((idx + 1) / total) * 100;
 
-  if (sceneNameEl) sceneNameEl.textContent = scene.title;
-  if (floorEl) floorEl.textContent = floorOf(scene.title);
+  const copy = t();
+  const title = sceneTitle(scene);
+  if (sceneNameEl) sceneNameEl.textContent = title;
+  if (floorEl) floorEl.textContent = floorOf(scene);
   if (progressBarEl) progressBarEl.style.width = `${pct}%`;
   if (progressTextEl) {
-    progressTextEl.textContent = `導覽進度 ${idx + 1} / ${total}`;
+    progressTextEl.textContent = copy.progress(idx + 1, total);
   }
 
-  if (prevNameEl) prevNameEl.textContent = prev ? prev.title : '已是起點';
-  if (nextNameEl) nextNameEl.textContent = next ? next.title : '已完成全程';
-  if (nextBtnNameEl) nextBtnNameEl.textContent = next ? next.title : '終點';
+  if (prevNameEl) prevNameEl.textContent = prev ? sceneTitle(prev) : copy.start;
+  if (nextNameEl) nextNameEl.textContent = next ? sceneTitle(next) : copy.end;
+  if (nextBtnNameEl) nextBtnNameEl.textContent = next ? sceneTitle(next) : copy.terminal;
 
   if (prevBtn) prevBtn.disabled = !prev;
   if (nextBtn) nextBtn.disabled = !next;
@@ -213,11 +308,9 @@ function updateRouteChrome() {
     const hint = nextCardEl.querySelector('.f360-next-card__hint');
     if (hint) {
       const hasPoints = (scene.points || []).length > 0;
-      hint.textContent = next
-        ? (hasPoints
-          ? '點擊藍色熱點聽設備介紹，金色熱點可前往下一站'
-          : '旋轉畫面，點擊金色熱點或下方按鈕前往')
-        : '您已走完整條建議動線，可從底部站點再探訪';
+        hint.textContent = next
+          ? (hasPoints ? copy.nextHintPoints : copy.nextHint)
+          : copy.doneHint;
     }
   }
 
@@ -238,18 +331,19 @@ function updateThumbnails() {
 
 function buildThumbnailMenu() {
   if (!thumbsEl) return;
+  const copy = t();
   thumbsEl.innerHTML = scenes.map((scene, index) => `
     <button
       type="button"
       class="f360-thumb"
       data-scene-id="${scene.id}"
       data-index="${index}"
-      aria-label="第 ${index + 1} 站 ${scene.title}"
+      aria-label="${copy.thumbAria(index + 1, sceneTitle(scene))}"
     >
       <span class="f360-thumb__badge">${index + 1}</span>
       <img class="f360-thumb__img" src="${scene.thumbnail}" alt="" loading="lazy">
-      <span class="f360-thumb__name">${scene.title}</span>
-      <span class="f360-thumb__floor">${floorOf(scene.title)}</span>
+      <span class="f360-thumb__name">${sceneTitle(scene)}</span>
+      <span class="f360-thumb__floor">${floorOf(scene)}</span>
     </button>`).join('');
 
   thumbsEl.addEventListener('click', (event) => {
@@ -556,7 +650,7 @@ async function switchScene(targetId, options = {}) {
     await wait(420);
 
     await viewer.setPanorama(target.panoramaLite, {
-      caption: target.title,
+      caption: sceneTitle(target),
       panoData: target.panoDataLite,
       position: {
         yaw: target.defaultYaw,
@@ -601,6 +695,39 @@ function goAdjacent(delta) {
   switchScene(target.id, { viaMarkerId: link?.id });
 }
 
+function refreshLangChrome() {
+  const copy = t();
+  const eyebrow = document.querySelector('.f360-brand__eyebrow');
+  if (eyebrow) eyebrow.textContent = copy.brandEyebrow;
+  const tag = document.querySelector('.f360-next-card__tag');
+  if (tag) tag.textContent = copy.nextTag;
+  if (gotoNextBtn) gotoNextBtn.textContent = copy.gotoNext;
+  document.querySelectorAll('.f360-route-btn__kicker').forEach((el, i) => {
+    el.textContent = i === 0 ? copy.prevKicker : copy.nextKicker;
+  });
+  if (resetBtn) {
+    resetBtn.textContent = copy.reset;
+    resetBtn.setAttribute('aria-label', copy.reset);
+  }
+  const thumbsLabel = document.querySelector('.f360-thumbs-toggle__label');
+  if (thumbsLabel) thumbsLabel.textContent = copy.thumbs;
+  if (thumbsToggleMetaEl) thumbsToggleMetaEl.textContent = copy.stations(scenes.length);
+  const radar = document.querySelector('.f360-radar__caption');
+  if (radar) radar.textContent = copy.radar;
+  thumbsEl?.querySelectorAll('.f360-thumb').forEach((btn) => {
+    const scene = getScene(btn.dataset.sceneId);
+    if (!scene) return;
+    const name = btn.querySelector('.f360-thumb__name');
+    const floor = btn.querySelector('.f360-thumb__floor');
+    if (name) name.textContent = sceneTitle(scene);
+    if (floor) floor.textContent = floorOf(scene);
+    const idx = Number(btn.dataset.index) + 1;
+    btn.setAttribute('aria-label', copy.thumbAria(idx, sceneTitle(scene)));
+  });
+  updateRouteChrome();
+  if (currentSceneId) applySceneMarkers(currentSceneId);
+}
+
 function initGuide() {
   if (!guideApi) return;
   guide = guideApi.createGuideController({
@@ -611,6 +738,7 @@ function initGuide() {
     onFocusPoint: (point) => {
       focusPoint(point);
     },
+    onLangChange: () => refreshLangChrome(),
   });
 }
 
@@ -620,8 +748,8 @@ function initViewer(startScene) {
 
   if (loaderSubEl) {
     loaderSubEl.textContent = LITE_ONLY
-      ? `正在載入 ${first.title}（順暢模式）…`
-      : `正在載入 ${first.title}…`;
+      ? t().loadingLite(sceneTitle(first))
+      : t().loading(sceneTitle(first));
   }
 
   viewer = new Viewer({
@@ -632,8 +760,8 @@ function initViewer(startScene) {
     }],
     panorama: first.panoramaLite,
     panoData: first.panoDataLite,
-    caption: first.title,
-    loadingTxt: '載入高將展間環景中…',
+    caption: sceneTitle(first),
+    loadingTxt: t().loadingPano,
     navbar: false,
     defaultYaw: first.defaultYaw,
     defaultPitch: first.defaultPitch,
@@ -747,7 +875,7 @@ async function upgradeToFullIfCapable(scene) {
     const pos = viewer.getPosition();
     const zoom = viewer.getZoomLevel();
     await viewer.setPanorama(scene.panoramaFull, {
-      caption: scene.title,
+      caption: sceneTitle(scene),
       panoData: scene.panoDataFull,
       position: pos,
       zoom,
@@ -773,6 +901,7 @@ function mapStationRecord(record) {
   return {
     id: record.id,
     title: record.title,
+    titleEn: record.titleEn || '',
     panorama: mediaUrl('panoramas-lite', record.file),
     panoramaLite: mediaUrl('panoramas-lite', record.file),
     panoramaFull: mediaUrl('panoramas', record.file),
@@ -797,7 +926,7 @@ function setThumbsCollapsed(collapsed) {
   uiEl?.classList.toggle('is-thumbs-collapsed', collapsed);
   if (thumbsToggleBtn) {
     thumbsToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    thumbsToggleBtn.title = collapsed ? '展開展區動線' : '收合展區動線';
+    thumbsToggleBtn.title = collapsed ? t().expandRoute : t().collapseRoute;
   }
   try {
     localStorage.setItem(THUMBS_COLLAPSE_KEY, collapsed ? '1' : '0');
@@ -808,11 +937,11 @@ function updatePanelsToggleLabel(collapsed) {
   if (!panelsToggleLabelEl) return;
   const scene = getScene(currentSceneId);
   if (collapsed) {
-    panelsToggleLabelEl.textContent = scene?.title
-      ? `顯示資訊 · ${scene.title}`
-      : '顯示資訊';
+    panelsToggleLabelEl.textContent = scene
+      ? t().showInfoScene(sceneTitle(scene))
+      : t().showInfo;
   } else {
-    panelsToggleLabelEl.textContent = '收合資訊';
+    panelsToggleLabelEl.textContent = t().hideInfo;
   }
 }
 
@@ -820,7 +949,7 @@ function setPanelsCollapsed(collapsed, { persist = true } = {}) {
   uiEl?.classList.toggle('is-panels-collapsed', collapsed);
   if (panelsToggleBtn) {
     panelsToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    panelsToggleBtn.title = collapsed ? '顯示資訊面板' : '收合資訊面板';
+    panelsToggleBtn.title = collapsed ? t().showInfo : t().hideInfo;
   }
   updatePanelsToggleLabel(collapsed);
   if (persist) {
@@ -939,7 +1068,7 @@ async function bootstrap() {
     scenes = merged.map(mapStationRecord);
     console.info('[高將展間] 環景模式', LITE_ONLY ? 'lite' : 'lite→full');
     if (thumbsToggleMetaEl) {
-      thumbsToggleMetaEl.textContent = `${scenes.length} 站`;
+    thumbsToggleMetaEl.textContent = t().stations(scenes.length);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -949,6 +1078,7 @@ async function bootstrap() {
     initGuide();
     bindPlacePanel();
     buildThumbnailMenu();
+    refreshLangChrome();
     bindControls();
     initViewer(resolveStartScene());
 

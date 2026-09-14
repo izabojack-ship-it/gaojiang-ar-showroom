@@ -6,7 +6,7 @@
 export const GUIDE_OVERRIDE_KEY = 'f360-guide-overrides';
 const GUIDE_MUTE_KEY = 'f360-guide-muted';
 const GUIDE_MODE_KEY = 'f360-guide-mode'; // avatar=動畫立牌 window=影片視窗 cutout=去背真人
-const GUIDE_LANG_KEY = 'f360-guide-lang'; // zh | en
+export const GUIDE_LANG_KEY = 'f360-guide-lang'; // zh | en
 const GUIDE_SEEN_INTRO_KEY = 'f360-guide-seen-intro';
 const GUIDE_CHANNEL = 'f360-guide-overrides';
 
@@ -17,8 +17,8 @@ export const COMPANY_INTRO = {
     text: '高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪。三十餘年來，高將已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 自有品牌行銷全世界。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。',
   },
   en: {
-    title: 'Gaojiang AR Showroom',
-    text: 'Welcome to the Gaojiang AR showroom. This is a single-station 360° test: drag to look around and scroll to zoom. More stations and hotspots will be added along the factory route.',
+    title: 'Gaojiang Precision Machinery Co., Ltd. — Company Introduction',
+    text: 'Gaojiang Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping. Over more than thirty years, Gaojiang has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under its own FAIR OAKS brand. Vision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility.',
   },
 };
 
@@ -111,6 +111,7 @@ export function createGuideController({
   getViewer,
   getMarkersPlugin,
   onFocusPoint,
+  onLangChange,
 }) {
   const els = {
     root: rootEl,
@@ -152,7 +153,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '212';
+  const AUDIO_VERSION = '216';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -808,10 +809,14 @@ export function createGuideController({
     els.root?.classList.toggle('is-speaking', next);
     els.avatar?.classList.toggle('is-speaking', next);
     if (els.status) {
-      els.status.textContent = next ? '解說中' : (muted ? '已靜音' : '待命');
+      els.status.textContent = next
+        ? (lang === 'en' ? 'Speaking' : '解說中')
+        : (muted ? (lang === 'en' ? 'Muted' : '已靜音') : (lang === 'en' ? 'Ready' : '待命'));
     }
     if (els.playBtn) {
-      els.playBtn.textContent = next ? '重播' : '播放語音';
+      els.playBtn.textContent = next
+        ? (lang === 'en' ? 'Replay' : '重播')
+        : (lang === 'en' ? 'Play' : '播放語音');
     }
     if (next) {
       startTalkRhythm();
@@ -830,11 +835,13 @@ export function createGuideController({
     } catch { /* ignore */ }
     els.root?.classList.toggle('is-muted', next);
     if (els.muteBtn) {
-      els.muteBtn.textContent = next ? '取消靜音' : '靜音';
+      els.muteBtn.textContent = next
+        ? (lang === 'en' ? 'Unmute' : '取消靜音')
+        : (lang === 'en' ? 'Mute' : '靜音');
       els.muteBtn.setAttribute('aria-pressed', next ? 'true' : 'false');
     }
     if (next) stopSpeech();
-    else if (!speaking && els.status) els.status.textContent = '待命';
+    else if (!speaking && els.status) els.status.textContent = lang === 'en' ? 'Ready' : '待命';
   }
 
   function isMaleVoice(v) {
@@ -984,12 +991,13 @@ export function createGuideController({
       return;
     }
     els.poiList.hidden = false;
+    const en = lang === 'en';
     els.poiList.innerHTML = `
-      <p class="f360-guide__poi-label">重點設備介紹</p>
+      <p class="f360-guide__poi-label">${en ? 'Featured equipment' : '重點設備介紹'}</p>
       <div class="f360-guide__poi-chips">
         ${points.map((p) => `
           <button type="button" class="f360-guide__poi-chip${p.id === activePointId ? ' is-active' : ''}" data-poi-id="${p.id}">
-            ${escapeHtml(p.title)}
+            ${escapeHtml(en && p.titleEn ? p.titleEn : p.title)}
           </button>`).join('')}
       </div>`;
   }
@@ -1026,27 +1034,50 @@ export function createGuideController({
     lang = val;
     try { localStorage.setItem(GUIDE_LANG_KEY, lang); } catch { /* ignore */ }
     updateLangBtn();
+    const resume = speaking || usingVideo || companyIntroPending;
     if (companyMode) {
-      const resume = speaking || usingVideo || companyIntroPending;
       companyIntroPending = false;
       stopSpeech();
       presentCompanyIntro({ autoPlay: resume });
+      onLangChange?.(lang);
       return;
     }
-    // 場景介紹顯示中且有雙語文案：立即以新語言重新呈現
     const scene = getScene?.();
-    if (!activePointId && scene?.guide?.enabled && scene.guide.introEn
-      && els.root && !els.root.hidden) {
-      const resume = speaking || usingVideo;
+    if (scene?.guide?.enabled && els.root && !els.root.hidden) {
       stopSpeech();
-      presentSceneIntro(scene, { autoPlay: resume });
+      if (activePointId) {
+        const point = (scene.points || []).find((p) => p.id === activePointId);
+        if (point) presentPoint(point, scene);
+        else presentSceneIntro(scene, { autoPlay: resume });
+      } else {
+        presentSceneIntro(scene, { autoPlay: resume });
+      }
     }
+    onLangChange?.(lang);
   }
 
   function updateLangBtn() {
     if (!langBtn) return;
     langBtn.textContent = lang === 'zh' ? 'EN' : '中文';
     langBtn.title = lang === 'zh' ? 'Switch to English' : '切換為中文';
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
+    if (els.playBtn) els.playBtn.textContent = lang === 'en' ? 'Play' : '播放語音';
+    if (els.stopBtn) els.stopBtn.textContent = lang === 'en' ? 'Stop' : '停止';
+    if (els.muteBtn) {
+      els.muteBtn.textContent = muted
+        ? (lang === 'en' ? 'Unmute' : '取消靜音')
+        : (lang === 'en' ? 'Mute' : '靜音');
+    }
+    if (els.soloBtn) els.soloBtn.textContent = lang === 'en' ? 'Focus mode' : '專注導覽';
+    if (els.closeBtn) els.closeBtn.textContent = lang === 'en' ? 'Hide guide' : '收起導覽員';
+    if (els.openBtn) {
+      const label = lang === 'en' ? 'Open guide' : '開啟導覽員';
+      const dot = els.openBtn.querySelector('.f360-guide-open__dot');
+      els.openBtn.textContent = '';
+      if (dot) els.openBtn.appendChild(dot);
+      els.openBtn.append(label);
+    }
+    if (soloExitBtn) soloExitBtn.textContent = lang === 'en' ? 'Exit focus mode' : '結束專注導覽';
   }
 
   function presentSceneIntro(scene, { autoPlay = false } = {}) {
@@ -1059,16 +1090,16 @@ export function createGuideController({
     companyIntroPending = false;
 
     showPanel();
-    if (els.name) els.name.textContent = guide.name || '高將導覽員';
-    if (els.role) els.role.textContent = guide.role || '廠區導覽';
-    if (videoPlate) videoPlate.textContent = guide.name || '高將導覽員';
+    const useEn = lang === 'en' && !!guide.introEn;
+    if (els.name) els.name.textContent = (useEn && guide.nameEn) || guide.name || '高將導覽員';
+    if (els.role) els.role.textContent = (useEn && guide.roleEn) || guide.role || '廠區導覽';
+    if (videoPlate) videoPlate.textContent = (useEn && guide.nameEn) || guide.name || '高將導覽員';
 
-    // 有英文文案時依目前語言切換；沒有則一律用中文
-    const useEn = lang === 'en' && guide.introEn;
     const introText = (useEn ? guide.introEn : guide.intro) || '';
+    const sceneTitle = useEn && scene.titleEn ? scene.titleEn : scene.title;
     setScript({
       title: useEn
-        ? (guide.titleEn || `${scene.title} · Introduction`)
+        ? (guide.titleEn || `${sceneTitle} · Introduction`)
         : (guide.title || `${scene.title} · 場景介紹`),
       text: introText,
       pointId: null,
@@ -1087,13 +1118,24 @@ export function createGuideController({
     companyMode = false;
     companyIntroPending = false;
     showPanel();
+    const useEn = lang === 'en' && !!(point.titleEn || point.bodyEn);
+    const title = (useEn && point.titleEn) || point.title;
+    const body = (useEn && point.bodyEn) || point.body || '';
     setScript({
-      title: point.title,
-      text: point.body || '',
+      title,
+      text: body,
       pointId: point.id,
     });
     const sceneId = scene?.id || getScene?.()?.id;
-    if (point.body) speak(`${point.title}。${point.body}`, { key: sceneId ? `${sceneId}__${point.id}` : null });
+    if (body) {
+      const key = sceneId
+        ? `${sceneId}__${point.id}${useEn ? '_en' : ''}`
+        : null;
+      speak(useEn ? `${title}. ${body}` : `${title}。${body}`, {
+        key,
+        lang: useEn ? 'en' : 'zh',
+      });
+    }
     onFocusPoint?.(point, scene);
   }
 
@@ -1108,9 +1150,15 @@ export function createGuideController({
     if (!text) return;
     const scene = getScene?.();
     if (activePointId) {
-      // 機台介紹已含標題
-      const key = scene ? `${scene.id}__${activePointId}` : null;
-      speak(`${title}。${text}`, { force: true, key });
+      const useEn = lang === 'en';
+      const key = scene
+        ? `${scene.id}__${activePointId}${useEn ? '_en' : ''}`
+        : null;
+      speak(useEn ? `${title}. ${text}` : `${title}。${text}`, {
+        force: true,
+        key,
+        lang: useEn ? 'en' : 'zh',
+      });
       return;
     }
     const useEn = lang === 'en' && scene?.guide?.introEn;
@@ -1224,6 +1272,8 @@ export function createGuideController({
       renderPoiList(scene);
     },
     presentPoint,
+    getLang: () => lang,
+    setLang,
     stopSpeech,
     hidePanel,
     showPanel,
@@ -1248,7 +1298,20 @@ export function createGuideController({
   };
 }
 
-export function buildInfoMarkerHtml(point) {
+export function getGuideLang() {
+  try {
+    return localStorage.getItem(GUIDE_LANG_KEY) === 'en' ? 'en' : 'zh';
+  } catch {
+    return 'zh';
+  }
+}
+
+export function buildInfoMarkerHtml(point, lang = 'zh') {
+  const en = lang === 'en';
+  const title = en && point.titleEn ? point.titleEn : point.title;
+  const tag = en
+    ? (point.tagEn || point.tag || 'Equipment')
+    : (point.tag || '設備介紹');
   return `
     <div class="info-marker" aria-hidden="true">
       <div class="info-marker__pulse">
@@ -1257,33 +1320,36 @@ export function buildInfoMarkerHtml(point) {
         <span class="info-marker__core">i</span>
       </div>
       <div class="info-marker__chip">
-        <span class="info-marker__tag">${escapeHtml(point.tag || '設備介紹')}</span>
-        <span class="info-marker__name">${escapeHtml(point.title)}</span>
+        <span class="info-marker__tag">${escapeHtml(tag)}</span>
+        <span class="info-marker__name">${escapeHtml(title)}</span>
       </div>
     </div>`;
 }
 
-export function buildPointMarkers(scene) {
-  return (scene.points || []).map((point) => ({
-    id: point.id,
-    html: buildInfoMarkerHtml(point),
-    position: point.position,
-    size: { width: 148, height: 88 },
-    anchor: 'center bottom',
-    className: 'info-marker-wrap',
-    // 關閉 hover 縮放，避免與環景定位疊加造成震動
-    hoverScale: false,
-    tooltip: {
-      content: `介紹：${point.title}`,
-      className: 'f360-tooltip f360-tooltip--info',
-      position: 'top center',
-      trigger: 'hover',
-    },
-    data: {
-      kind: 'info',
-      pointId: point.id,
-    },
-  }));
+export function buildPointMarkers(scene, lang = getGuideLang()) {
+  const en = lang === 'en';
+  return (scene.points || []).map((point) => {
+    const title = en && point.titleEn ? point.titleEn : point.title;
+    return {
+      id: point.id,
+      html: buildInfoMarkerHtml(point, lang),
+      position: point.position,
+      size: { width: 148, height: 88 },
+      anchor: 'center bottom',
+      className: 'info-marker-wrap',
+      hoverScale: false,
+      tooltip: {
+        content: en ? `Intro: ${title}` : `介紹：${title}`,
+        className: 'f360-tooltip f360-tooltip--info',
+        position: 'top center',
+        trigger: 'hover',
+      },
+      data: {
+        kind: 'info',
+        pointId: point.id,
+      },
+    };
+  });
 }
 
 function escapeHtml(str = '') {
