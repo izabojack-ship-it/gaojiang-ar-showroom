@@ -72,8 +72,8 @@
         "id": "link-station-1f-line-right-front-next",
         "target": "station-1f-line-right-back",
         "position": {
-          "yaw": "125deg",
-          "pitch": "-18deg"
+          "yaw": "-10deg",
+          "pitch": "-8deg"
         },
         "label": "一樓生產線（右後半部） →",
         "labelEn": "1F Production Line (Right Rear) →"
@@ -117,8 +117,8 @@
         "id": "link-station-1f-line-right-back-next",
         "target": "station-1f-parts-mfg",
         "position": {
-          "yaw": "125deg",
-          "pitch": "-18deg"
+          "yaw": "-16deg",
+          "pitch": "-10deg"
         },
         "label": "一樓左方生產線 →",
         "labelEn": "1F Left Production Line →"
@@ -162,8 +162,8 @@
         "id": "link-station-1f-parts-mfg-next",
         "target": "station-1f-qc",
         "position": {
-          "yaw": "125deg",
-          "pitch": "-18deg"
+          "yaw": "-4deg",
+          "pitch": "-10deg"
         },
         "label": "一樓品管室 →",
         "labelEn": "1F Quality Control Room →"
@@ -193,81 +193,74 @@
     },
     "points": [
       {
-        "id": "poi-qc-2d",
-        "title": "高規格二次元量測儀",
-        "body": "最大量測高度達 2 米，能精準捕捉大型構造件與複雜幾何圖形的關鍵尺寸。",
+        "id": "poi-qc-height",
+        "title": "垂直度量測儀器",
+        "body": "用於檢驗沖床出廠時，量測滑塊上下往復運動與工作台面的垂直度。",
+        "image": "qc-height.jpg",
         "position": {
-          "yaw": "-155deg",
+          "yaw": "-148deg",
           "pitch": "-8deg"
         },
-        "titleEn": "High-spec 2D measuring instrument",
-        "bodyEn": "Maximum measuring height of 2 meters, accurately capturing critical dimensions of large structural parts and complex geometries."
+        "titleEn": "Perpendicularity measuring instrument",
+        "bodyEn": "Used during factory inspection of the press to measure the perpendicularity between the slide's up-and-down reciprocating motion and the bolster surface."
+      },
+      {
+        "id": "poi-qc-surface",
+        "title": "表面與材質綜合檢驗儀器",
+        "body": "一站式完成沖床核心件的物理強度、表面品質與磁性控制。檢驗設備：硬度檢測儀，測量材料硬度，確保材質耐磨且不脆裂；粗糙度檢測器，檢驗微觀表面平整度與光滑度，降低高速摩擦與發熱；磁力消除器，清除殘餘磁性，防止吸附鐵屑導致模具拉傷與卡死；其他檢測設備：分貝器、水平儀、深度規、塊規、游標卡尺、缸徑規。",
+        "image": "qc-surface.jpg",
+        "position": {
+          "yaw": "16deg",
+          "pitch": "-10deg"
+        },
+        "titleEn": "Surface and material inspection instruments",
+        "bodyEn": "Physical strength, surface quality, and magnetism of press core parts are inspected in one place. Equipment includes a hardness tester to confirm the material is wear-resistant and not brittle; a roughness tester for microscopic flatness and smoothness, reducing high-speed friction and heat; a demagnetizer to remove residual magnetism and prevent swarf from scoring or jamming the die; and other tools such as a sound-level meter, spirit level, depth gauge, gauge blocks, calipers, and a bore gauge."
+      },
+      {
+        "id": "poi-qc-gauges",
+        "title": "完整全套精密量具",
+        "body": "全套精密量測量具。這裡集結了塊規、針規、直徑規、內外徑分厘卡與各類高精度量表。作為全廠的校正基準，配合各類量具，能對沖床零件進行微米級的內外徑、深度與形狀公差量測，為機台的高速運轉築起第一道品質防線。",
+        "image": "qc-gauges.jpg",
+        "position": {
+          "yaw": "58deg",
+          "pitch": "-8deg"
+        },
+        "titleEn": "Complete set of precision gauges",
+        "bodyEn": "A full suite of precision gauges: gauge blocks, pin gauges, diameter gauges, inside/outside micrometers, and high-accuracy indicators. As the plant's calibration reference, these tools enable micron-level inspection of press parts for inside/outside diameter, depth, and form tolerance — the first quality line of defense for high-speed operation."
       },
       {
         "id": "poi-qc-granite",
         "title": "超大型精密岩石量測平台",
         "body": "具備 6 米 × 3 米的超大作業面積，採用高密度天然花崗岩，提供極致平整與低熱膨脹的基準面，確保大型床台與大尺寸零件的微米級檢驗精度。",
         "position": {
-          "yaw": "48deg",
-          "pitch": "-18deg"
+          "yaw": "50deg",
+          "pitch": "-26deg"
         },
         "titleEn": "Extra-large precision granite measuring table",
         "bodyEn": "A 6 m × 3 m working area of high-density natural granite provides an ultra-flat, low-thermal-expansion reference surface for micron-level inspection of large beds and oversized parts."
       },
       {
-        "id": "poi-qc-height",
-        "title": "垂直度量測儀器",
-        "body": "用於檢驗大型構件與床台的垂直度，把關高速精密沖床的組裝基準。",
+        "id": "poi-qc-2d",
+        "title": "二次元高度規",
+        "body": "您現在看到的是高將引進瑞士的 Trimos 二次元高度規，本公司具備最高二米的高度規。高速沖床要實現每分鐘上千次的高速穩定沖壓，關鍵就在於微米級的細節控制。無論是沖床內部的關鍵傳動組件，還是沖床的滑塊結構件，都必須在此經過嚴格的檢測。Trimos 高度規具備氣墊懸浮移動技術與自動尋邊測力，讓我們的品管工程師能在極短時間內完成複雜的 2D 幾何特徵量測。我們對品質的堅持，就是您實現高效、穩定生產的最大保障。",
         "position": {
-          "yaw": "78deg",
-          "pitch": "-6deg"
+          "yaw": "82deg",
+          "pitch": "-8deg"
         },
-        "titleEn": "Perpendicularity measuring instrument",
-        "bodyEn": "Used to inspect the perpendicularity of large components and beds, safeguarding the assembly datum of high-speed precision presses."
+        "titleEn": "2D height gauge",
+        "bodyEn": "You are looking at Gaojiang's Swiss-made Trimos 2D height gauge; the company operates height gauges of up to two meters. High-speed presses that stamp more than a thousand strokes per minute depend on micron-level control. Critical drivetrain parts inside the press and the slide structure must all be strictly inspected here. The Trimos height gauge uses air-bearing movement and automatic edge-finding probe force, so QC engineers can finish complex 2D geometric measurements in a very short time. Our insistence on quality is your strongest guarantee of efficient, stable production."
       },
       {
-        "id": "poi-qc-roughness",
-        "title": "表面粗糙度檢測器",
-        "body": "量測加工面粗糙度，確認滑動與接觸面達到出廠精度要求。",
+        "id": "poi-qc-bdc",
+        "title": "動態下死點精度檢測儀器",
+        "body": "除了 JIS 靜態精度檢驗，沖床於出廠前需經過動態（重複）精度檢驗，以恆溫恆速進行下死點檢驗。於機台溫度維持穩定後，機台以 300 SPM 連續運轉，紀錄 1,000 次下死點位置，下死點變化最大為 ±0.005mm。高將對於品質的把關，是絕對不能妥協的原則。",
+        "image": "qc-bdc.jpg",
         "position": {
-          "yaw": "118deg",
-          "pitch": "-12deg"
+          "yaw": "141deg",
+          "pitch": "-8deg"
         },
-        "titleEn": "Surface roughness tester",
-        "bodyEn": "Measures machined-surface roughness to confirm that sliding and contact faces meet factory accuracy requirements."
-      },
-      {
-        "id": "poi-qc-hardness",
-        "title": "金屬硬度檢測儀",
-        "body": "檢測關鍵零件硬度，確保熱處理與材料強度符合規範。",
-        "position": {
-          "yaw": "135deg",
-          "pitch": "-10deg"
-        },
-        "titleEn": "Metal hardness tester",
-        "bodyEn": "Checks the hardness of key parts to ensure heat treatment and material strength meet specifications."
-      },
-      {
-        "id": "poi-qc-demag",
-        "title": "磁力消除器",
-        "body": "消除加工後殘磁，避免量測誤差並保護精密零件。",
-        "position": {
-          "yaw": "-95deg",
-          "pitch": "-14deg"
-        },
-        "titleEn": "Demagnetizer",
-        "bodyEn": "Removes residual magnetism after machining to avoid measurement error and protect precision parts."
-      },
-      {
-        "id": "poi-qc-gauges",
-        "title": "完整全套精密量具",
-        "body": "配備完整精密量具，支援各類尺寸、形位與日常檢驗作業。",
-        "position": {
-          "yaw": "-72deg",
-          "pitch": "-4deg"
-        },
-        "titleEn": "Complete set of precision gauges",
-        "bodyEn": "A full suite of precision measuring tools supporting dimensional, geometric, and daily inspection work."
+        "titleEn": "Dynamic BDC accuracy tester",
+        "bodyEn": "In addition to JIS static accuracy inspection, every press is dynamically (repeatability) inspected before shipment. Bottom dead center is checked at constant temperature and speed: after the machine temperature stabilizes, it runs continuously at 300 SPM while 1,000 BDC positions are recorded. Maximum BDC variation is ±0.005 mm. Gaojiang's quality control is a principle that cannot be compromised."
       }
     ],
     "links": [
@@ -285,8 +278,8 @@
         "id": "link-station-1f-qc-next",
         "target": "station-1f-line-left-new",
         "position": {
-          "yaw": "125deg",
-          "pitch": "-18deg"
+          "yaw": "174deg",
+          "pitch": "-6deg"
         },
         "label": "一樓周邊設備生產線 →",
         "labelEn": "1F Peripheral Equipment Line →"

@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '220';
+const MEDIA_VERSION = '227';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -245,7 +245,7 @@ function buildPortalMarkers(scene) {
       id: link.id,
       html: buildPortalMarkerHtml(link, direction),
       position: link.position,
-      size: { width: 148, height: 88 },
+      size: getUiLang() === 'en' ? { width: 196, height: 108 } : { width: 148, height: 88 },
       anchor: 'center bottom',
       className: 'portal-marker-wrap',
       tooltip: {

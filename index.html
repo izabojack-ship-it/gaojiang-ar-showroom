@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.14.1/index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.14.1/index.css">
-  <link rel="preload" as="image" href="./media/panoramas-lite/station-1f-corridor.jpg?v=216">
-  <link rel="stylesheet" href="./css/tour.css?v=220">
+  <link rel="preload" as="image" href="./media/panoramas-lite/station-1f-corridor.jpg?v=227">
+  <link rel="stylesheet" href="./css/tour.css?v=227">
   <script type="importmap">
   {
     "imports": {
@@ -98,13 +98,13 @@
       <div class="f360-presenter" data-guide-avatar aria-hidden="true">
         <img
           class="f360-presenter__img"
-          src="./media/guide/presenter_closed.png?v=216"
+          src="./media/guide/presenter_closed.png?v=226"
           alt=""
           decoding="async"
         >
         <img
           class="f360-presenter__img f360-presenter__img--open"
-          src="./media/guide/presenter_open.png?v=216"
+          src="./media/guide/presenter_open.png?v=226"
           alt=""
           decoding="async"
         >
@@ -115,8 +115,14 @@
         </div>
       </div>
       <div class="f360-subtitle">
-        <p class="f360-subtitle__title" data-guide-title></p>
-        <p class="f360-subtitle__text" data-guide-text></p>
+        <div class="f360-subtitle__head">
+          <p class="f360-subtitle__title" data-guide-title></p>
+          <button type="button" class="f360-subtitle__dismiss" data-guide-dismiss hidden>關閉介紹</button>
+        </div>
+        <div class="f360-subtitle__scroll">
+          <img class="f360-subtitle__photo" data-guide-image alt="" hidden>
+          <p class="f360-subtitle__text" data-guide-text></p>
+        </div>
         <div class="f360-subtitle__poi" data-guide-poi-list hidden></div>
         <div class="f360-subtitle__actions">
           <button type="button" class="f360-guide__btn f360-guide__btn--primary" data-guide-play>播放語音</button>
@@ -181,6 +187,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/tour.js?v=220"></script>
+  <script type="module" src="./js/tour.js?v=227"></script>
 </body>
 </html>

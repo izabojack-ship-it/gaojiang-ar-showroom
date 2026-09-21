@@ -119,8 +119,11 @@ export function createGuideController({
     name: rootEl?.querySelector('[data-guide-name]'),
     role: rootEl?.querySelector('[data-guide-role]'),
     status: rootEl?.querySelector('[data-guide-status]'),
+    subtitle: rootEl?.querySelector('.f360-subtitle'),
     title: rootEl?.querySelector('[data-guide-title]'),
+    image: rootEl?.querySelector('[data-guide-image]'),
     text: rootEl?.querySelector('[data-guide-text]'),
+    dismiss: rootEl?.querySelector('[data-guide-dismiss]'),
     playBtn: rootEl?.querySelector('[data-guide-play]'),
     stopBtn: rootEl?.querySelector('[data-guide-stop]'),
     muteBtn: rootEl?.querySelector('[data-guide-mute]'),
@@ -153,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '216';
+  const AUDIO_VERSION = '224';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -767,7 +770,8 @@ export function createGuideController({
     for (const ch of String(text || '')) {
       const span = document.createElement('span');
       span.className = 'f360-guide__ch';
-      span.textContent = ch;
+      span.textContent = ch === ' ' ? ' ' : ch;
+      if (ch === ' ') span.classList.add('is-space');
       frag.appendChild(span);
       speakableChars.push(span);
     }
@@ -1002,10 +1006,54 @@ export function createGuideController({
       </div>`;
   }
 
-  function setScript({ title, text, pointId = null }) {
+  function mediaVersion() {
+    try {
+      const href = document.querySelector('link[href*="tour.css"]')?.getAttribute('href') || '';
+      return new URL(href, window.location.href).searchParams.get('v') || String(Date.now());
+    } catch {
+      return String(Date.now());
+    }
+  }
+
+  function setGuideImage(file) {
+    if (!els.image) return;
+    if (!file) {
+      els.image.removeAttribute('src');
+      els.image.hidden = true;
+      els.image.alt = '';
+      return;
+    }
+    const name = String(file).replace(/^.*[\\/]/, '');
+    els.image.src = `./media/poi/${encodeURIComponent(name)}?v=${mediaVersion()}`;
+    els.image.alt = els.title?.textContent || '';
+    els.image.hidden = false;
+  }
+
+  function setPoiCard(on) {
+    els.subtitle?.classList.toggle('is-poi', !!on);
+    if (els.dismiss) {
+      els.dismiss.hidden = !on;
+      els.dismiss.textContent = lang === 'en' ? 'Close' : '關閉介紹';
+    }
+  }
+
+  function dismissPoint() {
+    stopSpeech();
+    const scene = getScene?.();
+    if (scene?.guide?.enabled) {
+      presentSceneIntro(scene, { autoPlay: false });
+      return;
+    }
+    setPoiCard(false);
+    setGuideImage(null);
+  }
+
+  function setScript({ title, text, pointId = null, image = null }) {
     activePointId = pointId;
     if (els.title) els.title.textContent = title || '';
+    setGuideImage(image);
     renderSpeakableText(text || '');
+    setPoiCard(!!pointId);
     const scene = getScene?.();
     renderPoiList(scene);
   }
@@ -1017,7 +1065,9 @@ export function createGuideController({
     activePointId = null;
     const c = COMPANY_INTRO[lang] || COMPANY_INTRO.zh;
     if (els.title) els.title.textContent = c.title;
+    setGuideImage(null);
     renderSpeakableText(c.text);
+    setPoiCard(false);
     renderPoiList(getScene?.());
     if (!autoPlay || muted) return;
     if (unlockedAudio) {
@@ -1070,6 +1120,7 @@ export function createGuideController({
     }
     if (els.soloBtn) els.soloBtn.textContent = lang === 'en' ? 'Focus mode' : '專注導覽';
     if (els.closeBtn) els.closeBtn.textContent = lang === 'en' ? 'Hide guide' : '收起導覽員';
+    if (els.dismiss) els.dismiss.textContent = lang === 'en' ? 'Close' : '關閉介紹';
     if (els.openBtn) {
       const label = lang === 'en' ? 'Open guide' : '開啟導覽員';
       const dot = els.openBtn.querySelector('.f360-guide-open__dot');
@@ -1125,6 +1176,7 @@ export function createGuideController({
       title,
       text: body,
       pointId: point.id,
+      image: point.image || null,
     });
     const sceneId = scene?.id || getScene?.()?.id;
     if (body) {
@@ -1175,6 +1227,7 @@ export function createGuideController({
     els.muteBtn?.addEventListener('click', () => setMuted(!muted));
     els.soloBtn?.addEventListener('click', () => setSolo(true));
     els.closeBtn?.addEventListener('click', () => setCollapsed(true));
+    els.dismiss?.addEventListener('click', () => dismissPoint());
 
     // 專注模式的退出鈕：掛在 body 上，不受介面隱藏規則影響
     soloExitBtn = document.createElement('button');
@@ -1334,7 +1387,7 @@ export function buildPointMarkers(scene, lang = getGuideLang()) {
       id: point.id,
       html: buildInfoMarkerHtml(point, lang),
       position: point.position,
-      size: { width: 148, height: 88 },
+      size: en ? { width: 196, height: 108 } : { width: 148, height: 88 },
       anchor: 'center bottom',
       className: 'info-marker-wrap',
       hoverScale: false,

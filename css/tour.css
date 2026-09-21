@@ -1060,6 +1060,38 @@ body.is-place-mode .info-marker__ripple {
   margin-bottom: 2px;
 }
 
+html[lang="en"] .f360-brand__eyebrow,
+html[lang="en"] .f360-next-card__tag,
+html[lang="en"] .f360-route-btn__kicker,
+html[lang="en"] .info-marker__tag,
+html[lang="en"] .portal-marker__dir,
+html[lang="en"] .f360-guide__poi-label {
+  letter-spacing: 0.03em;
+}
+
+html[lang="en"] .info-marker,
+html[lang="en"] .portal-marker {
+  width: 196px;
+  height: auto;
+  min-height: 88px;
+}
+
+html[lang="en"] .info-marker__chip,
+html[lang="en"] .portal-marker__chip {
+  max-width: 196px;
+}
+
+html[lang="en"] .info-marker__name,
+html[lang="en"] .portal-marker__name {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+}
+
 .info-marker__name {
   display: block;
   font-size: 0.78rem;
@@ -1170,6 +1202,8 @@ body.is-place-mode .info-marker__ripple {
   transform: translateX(-50%);
   bottom: calc(var(--f360-thumbs-h) + 16px + var(--f360-safe));
   width: min(620px, calc(100vw - 330px));
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
   pointer-events: auto;
   display: grid;
   gap: 7px;
@@ -1179,12 +1213,21 @@ body.is-place-mode .info-marker__ripple {
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(6, 10, 16, 0.14), rgba(6, 10, 16, 0.58));
   backdrop-filter: blur(8px);
+  overflow: hidden;
   transition: bottom 0.28s ease;
 }
 
 .f360-subtitle:not(:has(.f360-guide__ch)) {
   background: transparent;
   backdrop-filter: none;
+}
+
+.f360-subtitle__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .f360-subtitle__title {
@@ -1197,14 +1240,151 @@ body.is-place-mode .info-marker__ripple {
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
 }
 
+html[lang="en"] .f360-subtitle {
+  width: min(720px, calc(100vw - 240px));
+}
+
+html[lang="en"] .f360-subtitle__title {
+  letter-spacing: 0;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.f360-subtitle__dismiss {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(8, 12, 18, 0.55);
+  color: #f4f7fa;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.f360-subtitle__dismiss[hidden] {
+  display: none;
+}
+
+.f360-subtitle__dismiss:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.f360-subtitle__scroll {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.f360-subtitle__photo {
+  display: block;
+  max-width: min(100%, 280px);
+  max-height: 148px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.f360-subtitle__photo[hidden] {
+  display: none;
+}
+
 .f360-subtitle__text {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.65;
   color: #f4f7fa;
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.85);
-  max-height: 6.8em;
+  max-height: 9.2em;
   overflow: auto;
+  overflow-wrap: break-word;
+  word-break: normal;
+  max-width: 100%;
+}
+
+html[lang="en"] .f360-subtitle__text {
+  letter-spacing: 0;
+  max-height: 11.2em;
+  line-height: 1.5;
+}
+
+.f360-guide__ch.is-space {
+  white-space: pre;
+}
+
+.f360-subtitle.is-poi {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(540px, calc(100vw - 28px));
+  max-height: min(78vh, 680px);
+  overflow: hidden;
+  text-align: left;
+  padding: 12px 14px 10px;
+  background: rgba(8, 12, 18, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+html[lang="en"] .f360-subtitle.is-poi {
+  width: min(620px, calc(100vw - 24px));
+}
+
+.f360-subtitle.is-poi .f360-subtitle__head {
+  justify-content: space-between;
+}
+
+.f360-subtitle.is-poi .f360-subtitle__title {
+  flex: 1;
+  text-align: left;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+}
+
+.f360-subtitle.is-poi .f360-subtitle__scroll {
+  justify-items: start;
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0;
+  max-height: none;
+  padding-right: 4px;
+}
+
+.f360-subtitle.is-poi .f360-subtitle__photo {
+  max-width: 100%;
+  max-height: 180px;
+  margin: 0 auto;
+}
+
+.f360-subtitle.is-poi .f360-subtitle__text {
+  max-height: none;
+  overflow: visible;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.f360-subtitle.is-poi .f360-subtitle__head,
+.f360-subtitle.is-poi .f360-subtitle__poi,
+.f360-subtitle.is-poi .f360-subtitle__actions {
+  flex-shrink: 0;
+}
+
+.f360-subtitle.is-poi .f360-guide__poi-chips {
+  justify-content: flex-start;
+}
+
+html[lang="en"] .f360-guide__poi-chip {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: left;
 }
 
 .f360-subtitle__poi { pointer-events: auto; }
@@ -1911,6 +2091,19 @@ body.is-place-mode .f360-guide-open {
     font-size: 0.82rem;
     max-height: 4.8em;
   }
+
+  .f360-subtitle__photo {
+    max-height: 88px;
+  }
+
+  .f360-subtitle.is-poi {
+    width: calc(100vw - 16px);
+    max-height: min(72vh, 560px);
+  }
+
+  .f360-subtitle.is-poi .f360-subtitle__photo {
+    max-height: 120px;
+  }
 }
 
 @media (max-height: 540px), (max-width: 960px) and (orientation: landscape) {
@@ -1931,6 +2124,8 @@ body.is-place-mode .f360-guide-open {
 
   .f360-subtitle__title { display: none; }
 
+  .f360-subtitle__photo { display: none; }
+
   .f360-subtitle__text {
     max-height: 2.9em;
     font-size: 0.72rem;
@@ -1938,6 +2133,30 @@ body.is-place-mode .f360-guide-open {
   }
 
   .f360-subtitle__poi { display: none; }
+
+  .f360-subtitle.is-poi {
+    width: min(68vw, 560px);
+    max-height: min(82vh, 460px);
+    padding: 8px 10px 8px;
+  }
+
+  .f360-subtitle.is-poi .f360-subtitle__title { display: block; }
+
+  .f360-subtitle.is-poi .f360-subtitle__photo {
+    display: block;
+    max-height: 88px;
+  }
+
+  .f360-subtitle.is-poi .f360-subtitle__text {
+    max-height: none;
+    font-size: 0.78rem;
+  }
+
+  .f360-subtitle.is-poi .f360-subtitle__poi { display: block; }
+
+  .f360-subtitle.is-poi .f360-subtitle__scroll {
+    max-height: none;
+  }
 
   .f360-subtitle__actions { gap: 5px; }
 
