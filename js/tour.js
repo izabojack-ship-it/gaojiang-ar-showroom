@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '227';
+const MEDIA_VERSION = '228';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -87,6 +87,8 @@ function detectLiteOnly() {
 
 const LITE_ONLY = detectLiteOnly();
 let panoUpgradeSeq = 0;
+let restoringLite = false;
+let maxTextureSizeCache = 0;
 
 function makePanoData(width, height, hfovDeg = 360, fullHeight = null, croppedY = 0) {
   const hfov = hfovDeg || 360;
@@ -681,6 +683,7 @@ async function switchScene(targetId, options = {}) {
   } catch (err) {
     console.error('[高將展間] 場景切換失敗', err);
     fadeEl?.classList.remove('is-out', 'is-in');
+    await restoreLitePanorama(target, 'switch-failed');
   } finally {
     isTransitioning = false;
   }
@@ -848,6 +851,11 @@ function initViewer(startScene) {
     upgradeToFullIfCapable(first);
   }, { once: true });
 
+  viewer.addEventListener('panorama-error', () => {
+    const scene = getScene(currentSceneId);
+    if (scene) restoreLitePanorama(scene, 'panorama-error');
+  });
+
   // 只預載下一站精簡圖，避免一次塞數十 MB
   const idx = scenes.findIndex((s) => s.id === first.id);
   const preload = scenes[idx + 1] || scenes[1];
@@ -857,8 +865,75 @@ function initViewer(startScene) {
   }
 }
 
+function getMaxTextureSize() {
+  if (maxTextureSizeCache) return maxTextureSizeCache;
+  try {
+    const gl = viewer?.renderer?.renderer?.getContext?.();
+    if (gl) {
+      maxTextureSizeCache = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096;
+      return maxTextureSizeCache;
+    }
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    maxTextureSizeCache = ctx ? (ctx.getParameter(ctx.MAX_TEXTURE_SIZE) || 4096) : 4096;
+  } catch {
+    maxTextureSizeCache = 4096;
+  }
+  return maxTextureSizeCache;
+}
+
+function canUploadFullPano(scene) {
+  const need = Math.max(Number(scene?.panoDataFull?.fullWidth) || 10240, Number(scene?.panoDataFull?.fullHeight) || 5120);
+  const maxTex = getMaxTextureSize();
+  if (maxTex < need) return false;
+  const mem = navigator.deviceMemory;
+  if (typeof mem === 'number' && mem <= 4) return false;
+  if (navigator.connection?.saveData) return false;
+  return true;
+}
+
+function hidePsvError() {
+  try { viewer?.hideError?.(); } catch { /* ignore */ }
+  document.querySelector('.psv-error-container')?.remove();
+}
+
+async function restoreLitePanorama(scene, reason = '') {
+  if (!viewer || !scene?.panoramaLite || restoringLite) return;
+  restoringLite = true;
+  hidePsvError();
+  try {
+    const pos = viewer.getPosition?.() || {
+      yaw: scene.defaultYaw,
+      pitch: scene.defaultPitch,
+    };
+    const zoom = viewer.getZoomLevel?.() ?? scene.defaultZoom ?? DEFAULT_ZOOM;
+    await viewer.setPanorama(scene.panoramaLite, {
+      caption: sceneTitle(scene),
+      panoData: scene.panoDataLite,
+      position: pos,
+      zoom,
+      transition: false,
+      showLoader: false,
+    });
+    hidePsvError();
+    if (reason) console.warn('[高將展間] 已退回精簡環景', reason);
+  } catch (err) {
+    console.error('[高將展間] 精簡環景還原失敗', err);
+    hidePsvError();
+  } finally {
+    restoringLite = false;
+  }
+}
+
 async function upgradeToFullIfCapable(scene) {
   if (LITE_ONLY || !viewer || !scene?.panoramaFull) return;
+  if (!canUploadFullPano(scene)) {
+    console.info('[高將展間] 此裝置改用精簡環景', {
+      maxTexture: getMaxTextureSize(),
+      memory: navigator.deviceMemory || null,
+    });
+    return;
+  }
 
   const seq = ++panoUpgradeSeq;
   const sceneId = scene.id;
@@ -885,6 +960,7 @@ async function upgradeToFullIfCapable(scene) {
   } catch (err) {
     if (seq === panoUpgradeSeq) {
       console.warn('[高將展間] 高畫質環景升級略過', err);
+      await restoreLitePanorama(scene, 'full-upgrade-failed');
     }
   }
 }

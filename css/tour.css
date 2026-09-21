@@ -40,6 +40,11 @@ html, body {
   background: #151c26;
 }
 
+/* PSV 高畫質升級失敗時會蓋上大驚嘆號；改由程式退回精簡圖，不讓客戶看到錯誤頁 */
+#viewer .psv-error-container {
+  display: none !important;
+}
+
 /* ----- Loader ----- */
 .f360-loader {
   position: fixed;
