@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '228';
+const MEDIA_VERSION = '230';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -127,7 +127,7 @@ function floorOf(sceneOrTitle) {
   const title = typeof sceneOrTitle === 'string' ? sceneOrTitle : (sceneOrTitle?.title || '');
   const en = getUiLang() === 'en';
   if (title.includes('測試') || title.includes('廠區') || title.startsWith('高將')) {
-    return en ? 'Gaojiang Plant' : '高將廠區';
+    return en ? 'Fair Oaks Plant' : '高將廠區';
   }
   if (title.startsWith('二樓')) return en ? '2F' : '二樓';
   if (title.startsWith('工廠')) return en ? 'Outdoor' : '戶外入口';
@@ -195,7 +195,7 @@ const UI_COPY = {
     brandEyebrow: 'Virtual factory tour',
     loading: (name) => `Loading ${name}…`,
     loadingLite: (name) => `Loading ${name} (smooth mode)…`,
-    loadingPano: 'Loading Gaojiang panorama…',
+    loadingPano: 'Loading the Fair Oaks panorama…',
   },
 };
 

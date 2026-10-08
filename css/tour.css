@@ -1284,6 +1284,8 @@ html[lang="en"] .f360-subtitle__title {
   justify-items: center;
   gap: 8px;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .f360-subtitle__photo {
@@ -1311,12 +1313,14 @@ html[lang="en"] .f360-subtitle__title {
   overflow: auto;
   overflow-wrap: break-word;
   word-break: normal;
+  min-width: 0;
   max-width: 100%;
+  width: 100%;
 }
 
 html[lang="en"] .f360-subtitle__text {
   letter-spacing: 0;
-  max-height: 11.2em;
+  max-height: 7.6em;
   line-height: 1.5;
 }
 
@@ -1362,15 +1366,27 @@ html[lang="en"] .f360-subtitle.is-poi {
   padding-right: 4px;
 }
 
+/* 有小圖時與文字並排，避免英文拉長把照片擠偏 */
+.f360-subtitle.is-poi .f360-subtitle__scroll:has(.f360-subtitle__photo:not([hidden])) {
+  grid-template-columns: minmax(112px, 196px) minmax(0, 1fr);
+  align-items: start;
+  justify-items: stretch;
+  gap: 12px;
+}
+
 .f360-subtitle.is-poi .f360-subtitle__photo {
-  max-width: 100%;
-  max-height: 180px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 196px;
+  max-height: 168px;
+  margin: 0;
+  justify-self: start;
+  position: sticky;
+  top: 0;
 }
 
 .f360-subtitle.is-poi .f360-subtitle__text {
-  max-height: none;
-  overflow: visible;
+  max-height: 8.8em;
+  overflow: auto;
   text-align: left;
   font-size: 0.9rem;
 }
@@ -2108,6 +2124,13 @@ body.is-place-mode .f360-guide-open {
 
   .f360-subtitle.is-poi .f360-subtitle__photo {
     max-height: 120px;
+    max-width: 100%;
+    justify-self: center;
+  }
+
+  .f360-subtitle.is-poi .f360-subtitle__scroll:has(.f360-subtitle__photo:not([hidden])) {
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
 }
 

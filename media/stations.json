@@ -16,9 +16,9 @@
       "autoPlayIntro": true,
       "title": "高將精機廠股份有限公司-公司介紹",
       "intro": "高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪，三十餘年來在高將全體同仁的努力奮鬥中，高將公司已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 之自有品牌行銷全世界，高將公司素以堅持高品質及專業技術，為業界所稱許；融合先進技術的高速精密沖床，以優異的性能，客製化服務，廣為國內外客戶所肯定。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。使命：打造客戶最信賴的沖床設備品牌，不斷創新改造產品，持續推動永續經營的競爭力，為工作伙伴及顧客創造榮耀與價值。本區為會議室、廠務辦公室、業務辦公室、副總辦公室。",
-      "titleEn": "Gaojiang Precision Machinery Co., Ltd. — Company Introduction",
-      "introEn": "Gaojiang Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping. Through the dedicated efforts of all Gaojiang colleagues over more than thirty years, the company has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under its own FAIR OAKS brand. Gaojiang is widely recognized in the industry for its commitment to high quality and professional expertise. Its high-speed precision presses, combining advanced technology, outstanding performance, and customized service, are highly regarded by customers at home and abroad. Vision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility. Mission: to build the most trusted press-equipment brand for customers, continuously innovate and improve products, keep advancing sustainable competitiveness, and create honor and value for colleagues and customers. This area houses the meeting rooms, plant-affairs office, sales office, and deputy general manager's office.",
-      "nameEn": "Gaojiang Guide",
+      "titleEn": "Fair Oaks Precision Machinery Co., Ltd. — Company Introduction",
+      "introEn": "Fair Oaks Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping.\n\nThrough the dedicated efforts of all Fair Oaks colleagues over more than thirty years, the company has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under the FAIR OAKS brand.\n\nFair Oaks is widely recognized for its commitment to high quality and professional expertise. Its high-speed precision presses combine advanced technology, outstanding performance, and customized service.\n\nVision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility. Mission: to build the most trusted press-equipment brand, continuously innovate, and create honor and value for colleagues and customers.\n\nThis area houses the meeting rooms, plant-affairs office, sales office, and deputy general manager's office.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -52,8 +52,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "此區域為裝配製一組產線，配置最大載重 50 噸天車，適用於組裝高將 FMT 大型沖床機種。沖床從各部件：頭座總成組裝、中座及滑塊組裝、腳座組裝，再到三座結合、沖床電控系統配電、精度調整、試車、沖床品質精度檢驗、拆機包裝出貨，流程一次到位。",
-      "introEn": "This area is Assembly Line Group 1, equipped with an overhead crane of up to 50 tons, used to assemble Gaojiang FMT large press models. The press goes through every stage in one complete flow: ram-head assembly, bolster and slide assembly, foot-frame assembly, joining of the three main sections, electrical control wiring, precision adjustment, trial run, quality and accuracy inspection, then disassembly, packing, and shipment.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "This area is Assembly Line Group 1, equipped with an overhead crane of up to 50 tons, used to assemble Fair Oaks FMT large press models.\n\nThe press goes through every stage in one complete flow: ram-head assembly, bolster and slide assembly, foot-frame assembly, joining of the three main sections, electrical control wiring, precision adjustment, trial run, quality and accuracy inspection, then disassembly, packing, and shipment.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -97,8 +97,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "此區域為裝配製一組和裝配製二組共同產線，配置 30～5 噸天車，適用於組裝高將 FMT 和 GH 型沖床，及大型結構件存放區。後方為噴漆區域，適用於沖床各部件噴漆上色。",
-      "introEn": "This area is the shared production line of Assembly Line Groups 1 and 2, equipped with 30- to 5-ton overhead cranes. It is used to assemble Gaojiang FMT and GH presses, and also serves as a storage area for large structural parts. The rear is the painting area, where press components are painted and finished.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "This area is the shared production line of Assembly Line Groups 1 and 2, equipped with 30- to 5-ton overhead cranes. It is used to assemble Fair Oaks FMT and GH presses, and also serves as a storage area for large structural parts.\n\nThe rear is the painting area, where press components are painted and finished.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -142,8 +142,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "此區域為裝配製二組產線，配置 30～5 噸天車，適用於組裝高將 GH 型沖床產線，後方區域為大型頭座總成件存放區。",
-      "introEn": "This area is Assembly Line Group 2, equipped with 30- to 5-ton overhead cranes, used to assemble Gaojiang GH-series presses. The rear area is a storage zone for large ram-head assemblies.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "This area is Assembly Line Group 2, equipped with 30- to 5-ton overhead cranes, used to assemble Fair Oaks GH-series presses.\n\nThe rear area is a storage zone for large ram-head assemblies.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -187,8 +187,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "歡迎來到我們的品管室。作為高速精密沖床的領導廠商，我們深知 micro-level（微米級）的極致精度是設備穩定運作與長久壽命的靈魂。品管室全區維持恆溫恆濕環境，並配備業界頂級的檢測與檢驗設備，嚴格把關每一道加工工序。以下為您展示本品管室的核心檢測量能。高將沖床最嚴苛的 JIS 特級精度檢驗標準，確保出廠的每一台沖床之平行度、垂直度、總和間隙，皆能發揮卓越的穩定度與精度表現。",
-      "introEn": "Welcome to our Quality Control room. As a leading manufacturer of high-speed precision presses, we know that micron-level accuracy is the soul of stable operation and long service life. The entire QC room is kept at constant temperature and humidity, and is equipped with top-tier inspection instruments to strictly control every machining process. The following highlights the core inspection capability of this QC room. Gaojiang presses are inspected to the most stringent JIS Extra-class accuracy standards, ensuring that the parallelism, perpendicularity, and total clearance of every press leaving the factory deliver outstanding stability and precision.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "Welcome to our Quality Control room. As a leading manufacturer of high-speed precision presses, we know that micron-level accuracy is the soul of stable operation and long service life.\n\nThe entire QC room is kept at constant temperature and humidity, and is equipped with top-tier inspection instruments to strictly control every machining process.\n\nFair Oaks presses are inspected to the most stringent JIS Extra-class accuracy standards, so the parallelism, perpendicularity, and total clearance of every press deliver outstanding stability and precision.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [
@@ -214,7 +214,7 @@
           "pitch": "-10deg"
         },
         "titleEn": "Surface and material inspection instruments",
-        "bodyEn": "Physical strength, surface quality, and magnetism of press core parts are inspected in one place. Equipment includes a hardness tester to confirm the material is wear-resistant and not brittle; a roughness tester for microscopic flatness and smoothness, reducing high-speed friction and heat; a demagnetizer to remove residual magnetism and prevent swarf from scoring or jamming the die; and other tools such as a sound-level meter, spirit level, depth gauge, gauge blocks, calipers, and a bore gauge."
+        "bodyEn": "Physical strength, surface quality, and magnetism of press core parts are inspected in one place.\n\nEquipment includes a hardness tester, a roughness tester, and a demagnetizer, plus a sound-level meter, spirit level, depth gauge, gauge blocks, calipers, and a bore gauge."
       },
       {
         "id": "poi-qc-gauges",
@@ -226,12 +226,13 @@
           "pitch": "-8deg"
         },
         "titleEn": "Complete set of precision gauges",
-        "bodyEn": "A full suite of precision gauges: gauge blocks, pin gauges, diameter gauges, inside/outside micrometers, and high-accuracy indicators. As the plant's calibration reference, these tools enable micron-level inspection of press parts for inside/outside diameter, depth, and form tolerance — the first quality line of defense for high-speed operation."
+        "bodyEn": "A full suite of precision gauges: gauge blocks, pin gauges, diameter gauges, inside and outside micrometers, and high-accuracy indicators.\n\nAs the plant's calibration reference, these tools measure diameter, depth, and form at micron level."
       },
       {
         "id": "poi-qc-granite",
         "title": "超大型精密岩石量測平台",
         "body": "具備 6 米 × 3 米的超大作業面積，採用高密度天然花崗岩，提供極致平整與低熱膨脹的基準面，確保大型床台與大尺寸零件的微米級檢驗精度。",
+        "image": "qc-granite.jpg",
         "position": {
           "yaw": "50deg",
           "pitch": "-26deg"
@@ -248,7 +249,7 @@
           "pitch": "-8deg"
         },
         "titleEn": "2D height gauge",
-        "bodyEn": "You are looking at Gaojiang's Swiss-made Trimos 2D height gauge; the company operates height gauges of up to two meters. High-speed presses that stamp more than a thousand strokes per minute depend on micron-level control. Critical drivetrain parts inside the press and the slide structure must all be strictly inspected here. The Trimos height gauge uses air-bearing movement and automatic edge-finding probe force, so QC engineers can finish complex 2D geometric measurements in a very short time. Our insistence on quality is your strongest guarantee of efficient, stable production."
+        "bodyEn": "This is the Swiss-made Trimos 2D height gauge introduced by Fair Oaks. The company operates height gauges of up to two meters.\n\nCritical drivetrain parts and the slide structure are inspected here. Air-bearing movement and automatic edge finding let engineers finish complex 2D measurements quickly."
       },
       {
         "id": "poi-qc-bdc",
@@ -260,7 +261,7 @@
           "pitch": "-8deg"
         },
         "titleEn": "Dynamic BDC accuracy tester",
-        "bodyEn": "In addition to JIS static accuracy inspection, every press is dynamically (repeatability) inspected before shipment. Bottom dead center is checked at constant temperature and speed: after the machine temperature stabilizes, it runs continuously at 300 SPM while 1,000 BDC positions are recorded. Maximum BDC variation is ±0.005 mm. Gaojiang's quality control is a principle that cannot be compromised."
+        "bodyEn": "Besides JIS static inspection, every press is checked dynamically before shipment.\n\nAfter the temperature stabilizes, the machine runs at 300 SPM and 1,000 bottom-dead-center positions are recorded. Maximum variation is ±0.005 mm. Quality at Fair Oaks is a principle that cannot be compromised."
       }
     ],
     "links": [
@@ -303,8 +304,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "此區域為周邊組生產線，高將自製生產：伺服送料機、齒輪式送料機、伺服整平機、主動式料架、整平機、開捲機，以及舉模臂和移模臂，滿足客戶全套沖壓生產線需求。",
-      "introEn": "This area is the peripheral-equipment production line. Gaojiang manufactures in-house: servo feeders, gear feeders, servo levelers, powered decoilers, levelers, uncoilers, as well as die-lifting and die-transfer arms, meeting customers' needs for a complete stamping production line.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "This area is the peripheral-equipment production line.\n\nFair Oaks manufactures in-house: servo feeders, gear feeders, servo levelers, powered decoilers, levelers, uncoilers, and die-lifting and die-transfer arms, for a complete stamping line.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -348,8 +349,8 @@
       "role": "廠區導覽",
       "autoPlayIntro": true,
       "intro": "歡迎來到一樓倉庫半成品零件庫存區。這裡是我司生產運籌的核心樞紐，負責高效管理與妥善存放各類核心元件，為高速精密沖床的組裝流程提供最堅實的後盾。全區配置天車及堆高機作業，方便高效率、高安全地搬運與調度重型元件，大幅提升組裝前置作業的順暢度。透過完善的倉儲規劃與嚴格的現場管理，我們確保每一件沖床零件在進入組裝階段前都獲得最佳維護，全面把關最終產品的生產品質與交期效率。",
-      "introEn": "Welcome to the first-floor warehouse for semi-finished parts. This is the core hub of our production logistics, efficiently managing and storing key components to provide the strongest support for high-speed precision press assembly. The area is equipped with overhead cranes and forklifts for efficient, safe handling and scheduling of heavy parts, greatly improving pre-assembly flow. Through thorough warehouse planning and strict on-site management, we ensure every press part is well maintained before assembly, fully safeguarding final product quality and delivery.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "Welcome to the first-floor warehouse for semi-finished parts. This is the hub that stores key components for high-speed precision press assembly.\n\nOverhead cranes and forklifts move heavy parts safely and keep pre-assembly flowing.\n\nCareful storage and on-site control keep every part ready before assembly, protecting quality and delivery.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],
@@ -395,8 +396,8 @@
       "title": "二樓倉庫半成品零件庫存區",
       "intro": "歡迎來到導覽的最後一站：二樓倉庫半成品零件庫存區。這裡是我們優化廠房空間與物料分流管理的核心區域，負責存放各式零組件、棧板與貨架物料，確保生產線的後勤補給源源不絕。本區具備以下四大特色與配置：高密度鋼構貨架系統，採用多層重型與中型貨架，極大化垂直儲放空間，讓各類零組件能依規範分類歸位，維持環境整潔與作業效率。寬敞中央作業走道，規劃明亮且寬敞的通道空間，方便搬運設備與作業人員安全通行，實現快速存取與精準盤點。完整天車吊運涵蓋，上方配置天車和堆高機設備，即使位於二樓，也能輕鬆安全地進行重型物料與大件棧板的吊運與移位。嚴謹的定置與標示管理，結合 ERP 系統進行物料定位管理，確保每一件機件備品都能快速尋獲，進一步提升高速精密沖床的組裝備料效率。",
       "titleEn": "2F Warehouse — Semi-finished Parts",
-      "introEn": "Welcome to the last stop of the tour: the second-floor warehouse for semi-finished parts. This is our core area for optimizing plant space and material flow, storing components, pallets, and racked materials so the production line is continuously supplied. This area has four key features: a high-density steel racking system using multi-level heavy- and medium-duty racks to maximize vertical storage, with parts classified and stored by specification to keep the area tidy and efficient; a wide central working aisle, bright and spacious for safe passage of handling equipment and staff, enabling fast access and accurate inventory checks; full overhead-crane coverage, with cranes and forklifts so even on the second floor, heavy materials and large pallets can be lifted and moved safely; and rigorous location and labeling management, combined with the ERP system for material positioning, so every spare part can be found quickly, further improving kitting efficiency for high-speed precision press assembly.",
-      "nameEn": "Gaojiang Guide",
+      "introEn": "Welcome to the last stop: the second-floor warehouse for semi-finished parts. Components, pallets, and racked materials are stored here so the line stays supplied.\n\nHigh-density steel racks use the vertical space, with parts stored by specification.\n\nA wide central aisle keeps people and equipment moving, for fast access and accurate counts.\n\nOverhead cranes and forklifts lift heavy materials safely, even on the second floor.\n\nLocation labels work with the ERP system so every spare part can be found quickly.",
+      "nameEn": "Fair Oaks Guide",
       "roleEn": "Factory tour"
     },
     "points": [],

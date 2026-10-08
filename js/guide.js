@@ -17,8 +17,8 @@ export const COMPANY_INTRO = {
     text: '高將精機廠股份有限公司，創立於 1995 年，專業生產高速精密沖床及周邊設備，廠房占地近 6000 坪。三十餘年來，高將已成為台灣高速精密沖床製造廠商中之佼佼者，以 FAIR OAKS 自有品牌行銷全世界。願景：成為沖床產業永續發展的國際典範。理念：品質至上、客戶為本、社會的責任感。',
   },
   en: {
-    title: 'Gaojiang Precision Machinery Co., Ltd. — Company Introduction',
-    text: 'Gaojiang Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping. Over more than thirty years, Gaojiang has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under its own FAIR OAKS brand. Vision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility.',
+    title: 'Fair Oaks Precision Machinery Co., Ltd. — Company Introduction',
+    text: 'Fair Oaks Precision Machinery Co., Ltd. was founded in 1995. We specialize in high-speed precision presses and peripheral equipment, and our plant covers nearly 6,000 ping.\n\nOver more than thirty years, Fair Oaks has become a leading Taiwanese manufacturer of high-speed precision presses, marketing worldwide under the FAIR OAKS brand.\n\nVision: to become an international model of sustainable development in the press industry. Values: quality first, customer-centric, and social responsibility.',
   },
 };
 
@@ -156,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '224';
+  const AUDIO_VERSION = '230';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -768,6 +768,10 @@ export function createGuideController({
     speakableChars = [];
     const frag = document.createDocumentFragment();
     for (const ch of String(text || '')) {
+      if (ch === '\n') {
+        frag.appendChild(document.createElement('br'));
+        continue;
+      }
       const span = document.createElement('span');
       span.className = 'f360-guide__ch';
       span.textContent = ch === ' ' ? ' ' : ch;
