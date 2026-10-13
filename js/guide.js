@@ -156,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '230';
+  const AUDIO_VERSION = '232';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 

@@ -241,6 +241,18 @@
         "bodyEn": "A 6 m × 3 m working area of high-density natural granite provides an ultra-flat, low-thermal-expansion reference surface for micron-level inspection of large beds and oversized parts."
       },
       {
+        "id": "poi-qc-granite-plate",
+        "title": "精密岩石平板",
+        "body": "Covina 精密花崗岩平板，是品保室量測時的基準平面。花崗岩硬度高、熱膨脹低，表面經精密研磨後不易變形。搭配高度規、量表與塊規，可檢驗零件的平面度、平行度與高度尺寸。",
+        "image": "qc-granite-plate.jpg",
+        "position": {
+          "yaw": "158deg",
+          "pitch": "-24deg"
+        },
+        "titleEn": "Precision granite surface plate",
+        "bodyEn": "The Covina precision granite surface plate is the reference plane for inspection in the quality room.\n\nGranite is hard and thermally stable, and the lapped surface holds its accuracy. Used with height gauges, indicators, and gauge blocks, it checks flatness, parallelism, and height."
+      },
+      {
         "id": "poi-qc-2d",
         "title": "二次元高度規",
         "body": "您現在看到的是高將引進瑞士的 Trimos 二次元高度規，本公司具備最高二米的高度規。高速沖床要實現每分鐘上千次的高速穩定沖壓，關鍵就在於微米級的細節控制。無論是沖床內部的關鍵傳動組件，還是沖床的滑塊結構件，都必須在此經過嚴格的檢測。Trimos 高度規具備氣墊懸浮移動技術與自動尋邊測力，讓我們的品管工程師能在極短時間內完成複雜的 2D 幾何特徵量測。我們對品質的堅持，就是您實現高效、穩定生產的最大保障。",
