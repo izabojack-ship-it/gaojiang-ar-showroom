@@ -156,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '232';
+  const AUDIO_VERSION = '236';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -172,6 +172,14 @@ export function createGuideController({
     return out;
   }
 
+  /** 英文旁白：公司名唸品牌 Fair Oaks，不唸「高將」的音譯 */
+  function spokenEn(text) {
+    return String(text || '')
+      .replaceAll('高將精機廠股份有限公司', 'Fair Oaks Precision Machinery Co., Ltd.')
+      .replaceAll('高將', 'Fair Oaks')
+      .replaceAll('FAIR OAKS', 'Fair Oaks');
+  }
+
   /** 預生成語音（edge-tts 神經語音）：比瀏覽器 TTS 自然，缺檔時自動退回 TTS */
   const AUDIO_BASE = './media/guide/audio/';
   let audioEl = null;
@@ -184,6 +192,12 @@ export function createGuideController({
   const pcmCache = new Map();
   let pcmData = null;
   let pcmRate = 0;
+  /** 10ms 一格的嘴型開合（0~1），依音節起伏，不是整段音量 */
+  let mouthCurve = null;
+  let pcmToken = 0;
+  /** 真人影片只負責畫面；聲音改走最新的 mp3，避免舊片仍唸 Gaojiang */
+  let voiceFromFile = false;
+  let liveBase = 0;
 
   /** 真人影片導覽員（本機素材，缺檔自動退回立牌＋語音） */
   const VIDEO_BASE = './media/guide/video/';
@@ -407,6 +421,7 @@ export function createGuideController({
     videoEl.addEventListener('ended', () => {
       stopVideoWatchdog();
       usingVideo = false;
+      if (voiceFromFile) return;
       setSpeaking(false);
       setSpeechProgress(1);
     });
@@ -550,6 +565,8 @@ export function createGuideController({
     els.root?.classList.add('is-video-live');
     if (fmt === 'cutout-pack') startPackedComposite();
     else stopPackedComposite();
+    videoEl.muted = true;
+    videoEl.defaultMuted = true;
     videoEl.src = url;
     try {
       await videoEl.play();
@@ -620,12 +637,20 @@ export function createGuideController({
       startAmpLoop();
     });
     audioEl.addEventListener('timeupdate', () => {
-      if (usingAudio && audioEl.duration > 0) {
-        setSpeechProgress(audioEl.currentTime / audioEl.duration);
+      if (!usingAudio || !(audioEl.duration > 0)) return;
+      setSpeechProgress(audioEl.currentTime / audioEl.duration);
+      if (!voiceFromFile || !videoEl || !(videoEl.duration > 0) || videoEl.paused) return;
+      const expect = (audioEl.currentTime / audioEl.duration) * videoEl.duration;
+      if (Math.abs((videoEl.currentTime || 0) - expect) > 0.45) {
+        try { videoEl.currentTime = expect; } catch { /* ignore */ }
       }
     });
     audioEl.addEventListener('ended', () => {
       usingAudio = false;
+      voiceFromFile = false;
+      if (videoEl && !videoEl.paused) {
+        try { videoEl.pause(); } catch { /* ignore */ }
+      }
       setSpeaking(false);
       setSpeechProgress(1);
     });
@@ -640,34 +665,75 @@ export function createGuideController({
     } catch { analyser = null; }
   }
 
-  async function preparePcm(url) {
+  function buildMouthCurve(pcm, rate) {
+    const hop = Math.max(1, Math.floor(rate * 0.01));
+    const win = Math.max(hop, Math.floor(rate * 0.02));
+    const n = Math.max(1, Math.floor((pcm.length - win) / hop));
+    const env = new Float32Array(n);
+    for (let i = 0; i < n; i += 1) {
+      let sum = 0;
+      let count = 0;
+      const offset = i * hop;
+      for (let j = 0; j < win; j += 4) {
+        const v = pcm[offset + j];
+        sum += v * v;
+        count += 1;
+      }
+      env[i] = Math.sqrt(sum / Math.max(1, count));
+    }
+    const baseN = 16;
+    const rel = new Float32Array(n);
+    let acc = 0;
+    for (let i = 0; i < n; i += 1) {
+      acc += env[i];
+      if (i >= baseN) acc -= env[i - baseN];
+      const base = acc / Math.min(i + 1, baseN);
+      rel[i] = Math.max(0, env[i] - base * 0.9);
+    }
+    const sorted = Array.from(rel).sort((a, b) => a - b);
+    const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] || 1;
+    const scale = p95 > 1e-5 ? 1 / p95 : 1;
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i += 1) {
+      const x = Math.min(1, rel[i] * scale);
+      curve[i] = x <= 0.04 ? 0 : x ** 0.78;
+    }
+    return curve;
+  }
+
+  function mouthAt(timeSec) {
+    if (!mouthCurve || mouthCurve.length < 2) return -1;
+    const idx = (timeSec + 0.04) / 0.01;
+    if (idx <= 0 || idx >= mouthCurve.length - 1) return 0;
+    const i0 = Math.floor(idx);
+    const frac = idx - i0;
+    return mouthCurve[i0] * (1 - frac) + mouthCurve[i0 + 1] * frac;
+  }
+
+  function applyPcm(ch, rate) {
+    pcmData = ch;
+    pcmRate = rate;
+    mouthCurve = buildMouthCurve(ch, rate);
+  }
+
+  async function preparePcm(url, token) {
     if (pcmCache.has(url)) {
+      if (token !== pcmToken) return;
       const hit = pcmCache.get(url);
-      pcmData = hit.ch;
-      pcmRate = hit.sr;
+      applyPcm(hit.ch, hit.sr);
       return;
     }
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!audioCtx && Ctx) audioCtx = new Ctx();
     if (!audioCtx) return;
     const res = await fetch(url);
+    if (!res.ok) throw new Error('guide-audio-pcm');
     const raw = await res.arrayBuffer();
     const buf = await audioCtx.decodeAudioData(raw.slice(0));
     const ch = buf.getChannelData(0);
     pcmCache.set(url, { ch, sr: buf.sampleRate });
-    pcmData = ch;
-    pcmRate = buf.sampleRate;
-  }
-
-  function ampFromPcm(timeSec) {
-    if (!pcmData || !pcmRate) return -1;
-    const i0 = Math.max(0, Math.floor(timeSec * pcmRate));
-    const n = Math.max(48, Math.floor(pcmRate * 0.028));
-    const end = Math.min(pcmData.length, i0 + n);
-    if (end <= i0) return 0;
-    let sum = 0;
-    for (let i = i0; i < end; i += 1) sum += pcmData[i] * pcmData[i];
-    return Math.min(1, Math.sqrt(sum / (end - i0)) * 7.2);
+    if (token !== pcmToken) return;
+    applyPcm(ch, buf.sampleRate);
   }
 
   function startAmpLoop() {
@@ -676,43 +742,79 @@ export function createGuideController({
     const step = () => {
       if (!speaking) {
         ampValue = 0;
+        liveBase = 0;
         els.avatar?.style.setProperty('--amp', '0');
+        els.avatar?.style.setProperty('--mouth', '0');
         return;
       }
-      if (usingAudio) {
-        const pcmAmp = ampFromPcm(audioEl?.currentTime || 0);
-        if (pcmAmp >= 0) {
-          ampTarget = pcmAmp;
-        } else if (analyser && wave) {
-          analyser.getByteTimeDomainData(wave);
-          let sum = 0;
-          for (let i = 0; i < wave.length; i += 1) {
-            const v = (wave[i] - 128) / 128;
-            sum += v * v;
-          }
-          const live = Math.min(1, Math.sqrt(sum / wave.length) * 5.8);
-          if (live > 0.04) ampTarget = live;
+      let next = -1;
+      if (usingAudio || voiceFromFile) next = mouthAt(audioEl?.currentTime || 0);
+      if (next < 0 && analyser && wave && (usingAudio || voiceFromFile)) {
+        analyser.getByteTimeDomainData(wave);
+        let sum = 0;
+        for (let i = 0; i < wave.length; i += 1) {
+          const v = (wave[i] - 128) / 128;
+          sum += v * v;
         }
+        const live = Math.sqrt(sum / wave.length);
+        liveBase += (live - liveBase) * 0.08;
+        const rel = Math.max(0, live - liveBase * 1.15);
+        next = Math.min(1, rel * 9.5);
       }
-      ampValue += (ampTarget - ampValue) * 0.42;
-      els.avatar?.style.setProperty('--amp', ampValue.toFixed(3));
+      ampTarget = next < 0 ? 0 : next;
+      const follow = ampTarget > ampValue ? 0.62 : 0.4;
+      ampValue += (ampTarget - ampValue) * follow;
+      const mouth = ampValue.toFixed(3);
+      els.avatar?.style.setProperty('--mouth', mouth);
+      els.avatar?.style.setProperty('--amp', mouth);
       ampRaf = requestAnimationFrame(step);
     };
     ampRaf = requestAnimationFrame(step);
   }
 
-  async function playRecorded(key, offset = 0) {
-    // 互斥保險：確保影片與合成語音都已靜止，避免聲音重疊
-    stopVideo();
+  function fitVideoToAudio() {
+    const video = videoEl;
+    const audio = audioEl;
+    if (!voiceFromFile || !video || !audio) return;
+    if (!(video.duration > 0) || !(audio.duration > 0)) return;
+    const rate = video.duration / audio.duration;
+    // 舊對嘴片和現在的旁白差太多時，嘴型會整段對不上。改看虛擬人，嘴型跟這段聲音走。
+    if (rate < 0.88 || rate > 1.15) {
+      voiceFromFile = false;
+      stopVideo({ hide: true });
+      return;
+    }
+    video.playbackRate = rate;
+  }
+
+  async function playRecorded(key, offset = 0, { keepVideo = false } = {}) {
+    if (!keepVideo) {
+      voiceFromFile = false;
+      stopVideo();
+    }
     if (speechSupported) window.speechSynthesis.cancel();
     ensureAudioEl();
     const url = `${AUDIO_BASE}${encodeURIComponent(key)}.mp3?v=${AUDIO_VERSION}`;
+    const token = ++pcmToken;
+    pcmData = null;
+    pcmRate = 0;
+    mouthCurve = null;
     audioEl.src = url;
-    preparePcm(url).catch(() => { pcmData = null; pcmRate = 0; });
+    preparePcm(url, token).catch(() => {
+      if (token !== pcmToken) return;
+      pcmData = null;
+      pcmRate = 0;
+      mouthCurve = null;
+    });
     try { await audioCtx?.resume(); } catch { /* ignore */ }
     await audioEl.play();
     if (offset > 0) {
       try { audioEl.currentTime = offset; } catch { /* ignore */ }
+    }
+    if (keepVideo) {
+      fitVideoToAudio();
+      audioEl.addEventListener('loadedmetadata', fitVideoToAudio, { once: true });
+      videoEl?.addEventListener('loadedmetadata', fitVideoToAudio, { once: true });
     }
   }
 
@@ -729,14 +831,9 @@ export function createGuideController({
     const a = els.avatar;
     if (!a) return;
     a.style.setProperty('--jaw', (0.45 + Math.random() * 0.9).toFixed(2));
-    // 無 PCM 波形時（TTS 或音檔尚未解碼）用節奏張嘴，避免站著不動
-    if (!pcmData) {
-      ampTarget = 0.72 + Math.random() * 0.28;
-      window.setTimeout(() => { if (!pcmData && speaking) ampTarget = 0.05; }, 70);
-    }
     a.classList.add('is-tick');
     window.clearTimeout(tickResetTimer);
-    tickResetTimer = window.setTimeout(() => a.classList.remove('is-tick'), 110);
+    tickResetTimer = window.setTimeout(() => a.classList.remove('is-tick'), 90);
   }
 
   function startTalkRhythm() {
@@ -744,14 +841,15 @@ export function createGuideController({
     const step = () => {
       if (!speaking) return;
       // boundary 事件有在動就交給它；否則用節奏器模擬說話動態
-      if (Date.now() - lastBoundaryAt > 380) {
+      if (!usingAudio && !usingVideo && Date.now() - lastBoundaryAt > 380) {
         talkTick();
         if (currentUtterLen > 0) {
-          const est = ((Date.now() - speakStartAt) / 1000) * EST_CHARS_PER_SEC;
+          const perSec = currentSpeakLang === 'en' ? 13 : 4.6;
+          const est = ((Date.now() - speakStartAt) / 1000) * perSec;
           setSpeechProgress(Math.min(1, est / currentUtterLen));
         }
       }
-      talkTimer = window.setTimeout(step, 130 + Math.random() * 170);
+      talkTimer = window.setTimeout(step, 150 + Math.random() * 90);
     };
     talkTimer = window.setTimeout(step, 120);
   }
@@ -833,6 +931,7 @@ export function createGuideController({
       stopTalkRhythm();
       ampTarget = 0;
       els.avatar?.style.setProperty('--amp', '0');
+      els.avatar?.style.setProperty('--mouth', '0');
     }
   }
 
@@ -881,10 +980,12 @@ export function createGuideController({
   }
 
   function stopSpeech() {
+    voiceFromFile = false;
     stopVideo();
     stopRecorded();
     if (speechSupported) window.speechSynthesis.cancel();
     currentUtterance = null;
+    mouthCurve = null;
     setSpeaking(false);
     setSpeechProgress(0);
   }
@@ -899,16 +1000,14 @@ export function createGuideController({
     currentSpeakText = text;
     currentSpeakLang = speakLang;
 
-    // 真人影片模式：有對應影片就播影片；缺檔時真人定格＋語音，維持畫面穩定
-    if (mode !== 'avatar' && key) {
-      playVideoClip(key).catch((err) => {
-        if (err?.message === 'guide-video-stale') return;
-        freezeOrHideVideo();
-        playRecorded(key).catch(() => {
-          usingAudio = false;
-          speakTts(text, speakLang);
-        });
-      });
+    // 真人影片只出畫面。聲音一律用最新 mp3（英文公司名為 Fair Oaks）
+    // 這兩筆文案已對調，舊對嘴片的嘴型是上一版句子，改走虛擬人
+    const rescripted = key === 'station-1f-qc__poi-qc-granite'
+      || key === 'station-1f-qc__poi-qc-granite_en'
+      || key === 'station-1f-qc__poi-qc-granite-plate'
+      || key === 'station-1f-qc__poi-qc-granite-plate_en';
+    if (mode !== 'avatar' && key && !rescripted) {
+      playGuideClip(key, text, speakLang);
       return;
     }
     if (mode !== 'avatar') freezeOrHideVideo();
@@ -923,6 +1022,38 @@ export function createGuideController({
     speakTts(text, speakLang);
   }
 
+  async function playGuideClip(key, text, speakLang) {
+    try {
+      await playVideoClip(key);
+    } catch (err) {
+      if (err?.message === 'guide-video-stale') return;
+      freezeOrHideVideo();
+      playRecorded(key).catch(() => {
+        usingAudio = false;
+        speakTts(text, speakLang);
+      });
+      return;
+    }
+    if (videoEl) {
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+    }
+    voiceFromFile = true;
+    try {
+      await playRecorded(key, 0, { keepVideo: true });
+      if (videoEl?.paused) {
+        try { await videoEl.play(); } catch { /* ignore */ }
+      }
+    } catch {
+      voiceFromFile = false;
+      if (videoEl) {
+        videoEl.muted = false;
+        videoEl.defaultMuted = false;
+        try { await videoEl.play(); } catch { /* 舊片音軌仍可聽 */ }
+      }
+    }
+  }
+
   function speakTts(text, ttsLang = 'zh') {
     if (!speechSupported) {
       if (els.status) els.status.textContent = '此瀏覽器不支援語音';
@@ -931,7 +1062,7 @@ export function createGuideController({
     // 互斥保險：合成語音開講前，影片與錄音一律停止
     stopVideo();
     stopRecorded();
-    const spoken = ttsLang === 'en' ? text.trim() : spokenZh(text.trim());
+    const spoken = ttsLang === 'en' ? spokenEn(text.trim()) : spokenZh(text.trim());
     const utter = new SpeechSynthesisUtterance(spoken);
     utter.lang = ttsLang === 'en' ? 'en-US' : 'zh-TW';
     // 男聲導覽員：略慢、略低沉

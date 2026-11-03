@@ -1154,9 +1154,9 @@ html[lang="en"] .portal-marker__name {
   opacity: 1;
 }
 
-/* 對嘴：張嘴幀依 --amp（0~1）交叉淡入，跟著男聲開合 */
+/* 對嘴：只淡入嘴部說話幀。--mouth 已是音節開合 0~1 */
 .f360-presenter__img--open {
-  opacity: clamp(0, calc((var(--amp, 0) - 0.03) * 3.6), 1);
+  opacity: var(--mouth, 0);
 }
 
 .f360-presenter__plate {
