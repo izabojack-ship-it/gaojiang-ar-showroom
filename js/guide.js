@@ -156,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '237';
+  const AUDIO_VERSION = '238';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -559,8 +559,7 @@ export function createGuideController({
     }
     if (!url) throw new Error('guide-video-missing');
     if (token !== videoToken) throw new Error('guide-video-stale');
-    // 互斥保險：播影片前，錄音與合成語音一律停止
-    stopRecorded();
+    // 旁白 mp3 要繼續播。這裡只停掉瀏覽器合成語音，避免兩種聲音疊在一起。
     if (speechSupported) window.speechSynthesis.cancel();
     els.root?.classList.toggle('is-fmt-cutout', fmt === 'cutout' || fmt === 'cutout-pack');
     els.root?.classList.toggle('is-fmt-window', fmt === 'window');
@@ -659,15 +658,15 @@ export function createGuideController({
       setSpeaking(false);
       setSpeechProgress(1);
     });
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new Ctx();
-      const srcNode = audioCtx.createMediaElementSource(audioEl);
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 512;
-      srcNode.connect(analyser);
-      analyser.connect(audioCtx.destination);
-    } catch { analyser = null; }
+  }
+
+  function unlockAudioOutput() {
+    unlockedAudio = true;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!audioCtx && Ctx) {
+      try { audioCtx = new Ctx(); } catch { audioCtx = null; }
+    }
+    if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
   }
 
   function buildMouthCurve(pcm, rate) {
@@ -810,6 +809,8 @@ export function createGuideController({
     pcmData = null;
     pcmRate = 0;
     mouthCurve = null;
+    audioEl.muted = false;
+    audioEl.volume = 1;
     audioEl.src = url;
     preparePcm(url, token).catch(() => {
       if (token !== pcmToken) return;
@@ -817,8 +818,9 @@ export function createGuideController({
       pcmRate = 0;
       mouthCurve = null;
     });
-    try { await audioCtx?.resume(); } catch { /* ignore */ }
-    await audioEl.play();
+    unlockAudioOutput();
+    const started = audioEl.play();
+    await started;
     if (offset > 0) {
       try { audioEl.currentTime = offset; } catch { /* ignore */ }
     }
@@ -1006,7 +1008,7 @@ export function createGuideController({
     if (!text?.trim()) return;
     if (muted && !force) return;
 
-    unlockedAudio = true;
+    unlockAudioOutput();
     stopSpeech();
     currentSpeakKey = key;
     currentSpeakText = text;
@@ -1030,35 +1032,36 @@ export function createGuideController({
   }
 
   async function playGuideClip(key, text, speakLang) {
+    voiceFromFile = true;
+    videoClockFit = false;
+    const audioPromise = playRecorded(key, 0, { keepVideo: true });
+    let videoOk = false;
     try {
       await playVideoClip(key);
+      videoOk = true;
     } catch (err) {
       if (err?.message === 'guide-video-stale') return;
       freezeOrHideVideo();
-      playRecorded(key).catch(() => {
-        usingAudio = false;
-        speakTts(text, speakLang);
-      });
-      return;
     }
-    if (videoEl) {
+    if (videoEl && videoOk) {
       videoEl.muted = true;
       videoEl.defaultMuted = true;
       videoEl.playbackRate = 1;
     }
-    voiceFromFile = true;
-    videoClockFit = false;
     try {
-      await playRecorded(key, 0, { keepVideo: true });
-      if (videoEl?.paused) {
+      await audioPromise;
+      if (videoOk && videoEl?.paused) {
         try { await videoEl.play(); } catch { /* ignore */ }
       }
     } catch {
       voiceFromFile = false;
-      if (videoEl) {
+      usingAudio = false;
+      if (videoEl && videoOk) {
         videoEl.muted = false;
         videoEl.defaultMuted = false;
         try { await videoEl.play(); } catch { /* 舊片音軌仍可聽 */ }
+      } else {
+        speakTts(text, speakLang);
       }
     }
   }
