@@ -156,7 +156,7 @@ export function createGuideController({
   // 中文語速估計（無 boundary 事件時的逐字進度後備）
   const EST_CHARS_PER_SEC = 5.0;
 
-  const AUDIO_VERSION = '236';
+  const AUDIO_VERSION = '237';
   /** 畫面維持原字；語音用同音字：將＝降、判斷詞「XX為」＝維 */
   const WEI4_KEEP = ['為了', '因為', '為您', '為工作伙伴', '為高速精密沖床的組裝'];
 
@@ -197,6 +197,7 @@ export function createGuideController({
   let pcmToken = 0;
   /** 真人影片只負責畫面；聲音改走最新的 mp3，避免舊片仍唸 Gaojiang */
   let voiceFromFile = false;
+  let videoClockFit = false;
   let liveBase = 0;
 
   /** 真人影片導覽員（本機素材，缺檔自動退回立牌＋語音） */
@@ -280,15 +281,15 @@ export function createGuideController({
     style.textContent = `
       .f360-gmode {
         position: absolute;
-        right: max(10px, env(safe-area-inset-right));
-        /* 高於立繪頭頂，避免擋住導覽員的臉 */
-        bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(57vh, 548px) + 8px);
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
         display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 6px;
-        pointer-events: auto; z-index: 7;
+        pointer-events: auto; z-index: 30;
       }
       @media (max-width: 720px) {
         .f360-gmode {
-          bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(43vh, 368px) + 8px);
+          top: max(8px, env(safe-area-inset-top));
+          right: max(8px, env(safe-area-inset-right));
         }
       }
       .f360-gmode__row { display: flex; gap: 6px; justify-content: flex-end; }
@@ -372,7 +373,8 @@ export function createGuideController({
       /* 手機橫向：導覽員縮小貼右下角，避免遮住環景 */
       @media (max-height: 540px), (max-width: 960px) and (orientation: landscape) {
         .f360-gmode {
-          bottom: calc(var(--f360-thumbs-h) + var(--f360-safe) + min(38vh, 150px) + 8px);
+          top: max(8px, env(safe-area-inset-top));
+          right: max(8px, env(safe-area-inset-right));
         }
         .f360-gmode__toggle { padding: 6px 9px; font-size: 0.66rem; }
         .f360-guide.is-fmt-window .f360-gv video,
@@ -414,6 +416,7 @@ export function createGuideController({
       startVideoWatchdog();
     });
     videoEl.addEventListener('timeupdate', () => {
+      if (voiceFromFile) return;
       if (usingVideo && videoEl.duration > 0) {
         setSpeechProgress(videoEl.currentTime / videoEl.duration);
       }
@@ -604,6 +607,8 @@ export function createGuideController({
     stopPackedComposite();
     try { videoEl.pause(); } catch { /* ignore */ }
     usingVideo = false;
+    videoClockFit = false;
+    try { videoEl.playbackRate = 1; } catch { /* ignore */ }
     if (hide) {
       videoEl.removeAttribute('src');
       try { videoEl.load(); } catch { /* ignore */ }
@@ -639,9 +644,9 @@ export function createGuideController({
     audioEl.addEventListener('timeupdate', () => {
       if (!usingAudio || !(audioEl.duration > 0)) return;
       setSpeechProgress(audioEl.currentTime / audioEl.duration);
-      if (!voiceFromFile || !videoEl || !(videoEl.duration > 0) || videoEl.paused) return;
+      if (!videoClockFit || !voiceFromFile || !videoEl || !(videoEl.duration > 0) || videoEl.paused) return;
       const expect = (audioEl.currentTime / audioEl.duration) * videoEl.duration;
-      if (Math.abs((videoEl.currentTime || 0) - expect) > 0.45) {
+      if (Math.abs((videoEl.currentTime || 0) - expect) > 0.35) {
         try { videoEl.currentTime = expect; } catch { /* ignore */ }
       }
     });
@@ -669,41 +674,42 @@ export function createGuideController({
     const hop = Math.max(1, Math.floor(rate * 0.01));
     const win = Math.max(hop, Math.floor(rate * 0.02));
     const n = Math.max(1, Math.floor((pcm.length - win) / hop));
-    const env = new Float32Array(n);
+    const rms = new Float32Array(n);
     for (let i = 0; i < n; i += 1) {
       let sum = 0;
       let count = 0;
       const offset = i * hop;
-      for (let j = 0; j < win; j += 4) {
+      for (let j = 0; j < win; j += 2) {
         const v = pcm[offset + j];
         sum += v * v;
         count += 1;
       }
-      env[i] = Math.sqrt(sum / Math.max(1, count));
+      rms[i] = Math.sqrt(sum / Math.max(1, count));
     }
-    const baseN = 16;
+    let base = 0;
     const rel = new Float32Array(n);
-    let acc = 0;
     for (let i = 0; i < n; i += 1) {
-      acc += env[i];
-      if (i >= baseN) acc -= env[i - baseN];
-      const base = acc / Math.min(i + 1, baseN);
-      rel[i] = Math.max(0, env[i] - base * 0.9);
+      base += (rms[i] - base) * 0.1;
+      rel[i] = Math.max(0, rms[i] - base * 0.78);
     }
     const sorted = Array.from(rel).sort((a, b) => a - b);
-    const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] || 1;
-    const scale = p95 > 1e-5 ? 1 / p95 : 1;
+    const p90 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))] || 1;
+    const scale = p90 > 1e-5 ? 1 / p90 : 1;
     const curve = new Float32Array(n);
+    let env = 0;
     for (let i = 0; i < n; i += 1) {
-      const x = Math.min(1, rel[i] * scale);
-      curve[i] = x <= 0.04 ? 0 : x ** 0.78;
+      let x = Math.min(1, rel[i] * scale);
+      if (x < 0.08) x = 0;
+      const follow = x > env ? 0.72 : 0.24;
+      env += (x - env) * follow;
+      curve[i] = env < 0.05 ? 0 : env;
     }
     return curve;
   }
 
   function mouthAt(timeSec) {
     if (!mouthCurve || mouthCurve.length < 2) return -1;
-    const idx = (timeSec + 0.04) / 0.01;
+    const idx = (timeSec + 0.03) / 0.01;
     if (idx <= 0 || idx >= mouthCurve.length - 1) return 0;
     const i0 = Math.floor(idx);
     const frac = idx - i0;
@@ -745,6 +751,8 @@ export function createGuideController({
         liveBase = 0;
         els.avatar?.style.setProperty('--amp', '0');
         els.avatar?.style.setProperty('--mouth', '0');
+        els.avatar?.style.setProperty('--mouth-mid', '0');
+        els.avatar?.style.setProperty('--mouth-wide', '0');
         return;
       }
       let next = -1;
@@ -757,16 +765,17 @@ export function createGuideController({
           sum += v * v;
         }
         const live = Math.sqrt(sum / wave.length);
-        liveBase += (live - liveBase) * 0.08;
-        const rel = Math.max(0, live - liveBase * 1.15);
-        next = Math.min(1, rel * 9.5);
+        liveBase += (live - liveBase) * 0.12;
+        const rel = Math.max(0, live - liveBase * 1.2);
+        next = Math.min(1, rel * 8);
       }
-      ampTarget = next < 0 ? 0 : next;
-      const follow = ampTarget > ampValue ? 0.62 : 0.4;
-      ampValue += (ampTarget - ampValue) * follow;
-      const mouth = ampValue.toFixed(3);
-      els.avatar?.style.setProperty('--mouth', mouth);
-      els.avatar?.style.setProperty('--amp', mouth);
+      ampValue = next < 0 ? 0 : next;
+      const wide = ampValue < 0.82 ? 0 : Math.min(0.45, (ampValue - 0.82) * 1.6);
+      const mid = Math.min(1, Math.max(0, (ampValue - 0.06) / 0.72)) * (1 - wide);
+      els.avatar?.style.setProperty('--mouth-mid', mid.toFixed(3));
+      els.avatar?.style.setProperty('--mouth-wide', wide.toFixed(3));
+      els.avatar?.style.setProperty('--mouth', ampValue.toFixed(3));
+      els.avatar?.style.setProperty('--amp', ampValue.toFixed(3));
       ampRaf = requestAnimationFrame(step);
     };
     ampRaf = requestAnimationFrame(step);
@@ -778,19 +787,21 @@ export function createGuideController({
     if (!voiceFromFile || !video || !audio) return;
     if (!(video.duration > 0) || !(audio.duration > 0)) return;
     const rate = video.duration / audio.duration;
-    // 舊對嘴片和現在的旁白差太多時，嘴型會整段對不上。改看虛擬人，嘴型跟這段聲音走。
-    if (rate < 0.88 || rate > 1.15) {
-      voiceFromFile = false;
-      stopVideo({ hide: true });
-      return;
+    // 長度接近才微調播放速度。差太多仍留著真人畫面，不快放、也不退回虛擬人。
+    if (rate >= 0.82 && rate <= 1.28) {
+      video.playbackRate = rate;
+      videoClockFit = true;
+    } else {
+      video.playbackRate = 1;
+      videoClockFit = false;
     }
-    video.playbackRate = rate;
   }
 
   async function playRecorded(key, offset = 0, { keepVideo = false } = {}) {
     if (!keepVideo) {
       voiceFromFile = false;
-      stopVideo();
+      videoClockFit = false;
+      stopVideo({ hide: true });
     }
     if (speechSupported) window.speechSynthesis.cancel();
     ensureAudioEl();
@@ -981,7 +992,8 @@ export function createGuideController({
 
   function stopSpeech() {
     voiceFromFile = false;
-    stopVideo();
+    videoClockFit = false;
+    stopVideo({ hide: true });
     stopRecorded();
     if (speechSupported) window.speechSynthesis.cancel();
     currentUtterance = null;
@@ -1000,13 +1012,8 @@ export function createGuideController({
     currentSpeakText = text;
     currentSpeakLang = speakLang;
 
-    // 真人影片只出畫面。聲音一律用最新 mp3（英文公司名為 Fair Oaks）
-    // 這兩筆文案已對調，舊對嘴片的嘴型是上一版句子，改走虛擬人
-    const rescripted = key === 'station-1f-qc__poi-qc-granite'
-      || key === 'station-1f-qc__poi-qc-granite_en'
-      || key === 'station-1f-qc__poi-qc-granite-plate'
-      || key === 'station-1f-qc__poi-qc-granite-plate_en';
-    if (mode !== 'avatar' && key && !rescripted) {
+    // 真人模式一律播影片畫面，聲音用最新 mp3（英文公司名為 Fair Oaks）
+    if (mode !== 'avatar' && key) {
       playGuideClip(key, text, speakLang);
       return;
     }
@@ -1037,8 +1044,10 @@ export function createGuideController({
     if (videoEl) {
       videoEl.muted = true;
       videoEl.defaultMuted = true;
+      videoEl.playbackRate = 1;
     }
     voiceFromFile = true;
+    videoClockFit = false;
     try {
       await playRecorded(key, 0, { keepVideo: true });
       if (videoEl?.paused) {
@@ -1060,7 +1069,7 @@ export function createGuideController({
       return;
     }
     // 互斥保險：合成語音開講前，影片與錄音一律停止
-    stopVideo();
+    stopVideo({ hide: true });
     stopRecorded();
     const spoken = ttsLang === 'en' ? spokenEn(text.trim()) : spokenZh(text.trim());
     const utter = new SpeechSynthesisUtterance(spoken);
@@ -1411,18 +1420,18 @@ export function createGuideController({
         }
         if (event.target.closest('[data-gmode-toggle]')) {
           wrap.classList.toggle('is-collapsed');
-          return;
         }
+      });
+      modeButtons = [...els.root.querySelectorAll('[data-gmode]')];
+      els.root.addEventListener('click', (event) => {
         const btn = event.target.closest('[data-gmode]');
         if (!btn) return;
         wrap.classList.add('is-collapsed');
         stopSpeech();
         applyMode(btn.dataset.gmode);
-        // 切換後立刻用新模式重播當前解說，避免「站著不動」的空窗
         unlockedAudio = true;
         replayCurrent();
       });
-      modeButtons = [...wrap.querySelectorAll('[data-gmode]')];
       langBtn = wrap.querySelector('[data-glang-switch]');
       updateLangBtn();
     }

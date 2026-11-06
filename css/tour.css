@@ -224,6 +224,7 @@ html, body {
 }
 
 .f360-ui > * { pointer-events: auto; }
+.f360-ui > .f360-guide { pointer-events: none; }
 
 /* ----- 資訊面板收合（手機橫式尤為重要） ----- */
 .f360-panels-toggle {
@@ -1154,9 +1155,12 @@ html[lang="en"] .portal-marker__name {
   opacity: 1;
 }
 
-/* 對嘴：只淡入嘴部說話幀。--mouth 已是音節開合 0~1 */
+/* 對嘴：半開與全開分開疊，身體像素相同，只換嘴 */
+.f360-presenter__img--mid {
+  opacity: var(--mouth-mid, 0);
+}
 .f360-presenter__img--open {
-  opacity: var(--mouth, 0);
+  opacity: var(--mouth-wide, 0);
 }
 
 .f360-presenter__plate {
@@ -1757,6 +1761,12 @@ html[lang="en"] .f360-guide__poi-chip {
   border-color: transparent;
   color: #061018;
   font-weight: 700;
+}
+
+.f360-guide__btn.is-active {
+  background: rgba(212, 160, 23, 0.32);
+  border-color: rgba(212, 160, 23, 0.7);
+  color: #ffd869;
 }
 
 .f360-guide-open {

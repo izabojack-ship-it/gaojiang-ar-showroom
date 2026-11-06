@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.14.1/index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.14.1/index.css">
-  <link rel="preload" as="image" href="./media/panoramas-lite/station-1f-corridor.jpg?v=236">
-  <link rel="stylesheet" href="./css/tour.css?v=236">
+  <link rel="preload" as="image" href="./media/panoramas-lite/station-1f-corridor.jpg?v=237">
+  <link rel="stylesheet" href="./css/tour.css?v=237">
   <script type="importmap">
   {
     "imports": {
@@ -98,13 +98,19 @@
       <div class="f360-presenter" data-guide-avatar aria-hidden="true">
         <img
           class="f360-presenter__img"
-          src="./media/guide/presenter_closed.png?v=236"
+          src="./media/guide/presenter_closed.png?v=237"
+          alt=""
+          decoding="async"
+        >
+        <img
+          class="f360-presenter__img f360-presenter__img--mid"
+          src="./media/guide/presenter_speak.png?v=237"
           alt=""
           decoding="async"
         >
         <img
           class="f360-presenter__img f360-presenter__img--open"
-          src="./media/guide/presenter_speak.png?v=236"
+          src="./media/guide/presenter_speak_wide.png?v=237"
           alt=""
           decoding="async"
         >
@@ -128,6 +134,8 @@
           <button type="button" class="f360-guide__btn f360-guide__btn--primary" data-guide-play>播放語音</button>
           <button type="button" class="f360-guide__btn" data-guide-stop>停止</button>
           <button type="button" class="f360-guide__btn" data-guide-mute aria-pressed="false">靜音</button>
+          <button type="button" class="f360-guide__btn" data-gmode="avatar">虛擬人</button>
+          <button type="button" class="f360-guide__btn" data-gmode="cutout">真人</button>
           <button type="button" class="f360-guide__btn" data-guide-solo>專注導覽</button>
           <button type="button" class="f360-guide__btn" data-guide-close>收起導覽員</button>
         </div>
@@ -187,6 +195,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/tour.js?v=236"></script>
+  <script type="module" src="./js/tour.js?v=237"></script>
 </body>
 </html>
