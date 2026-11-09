@@ -229,18 +229,6 @@
         "bodyEn": "A full suite of precision gauges: gauge blocks, pin gauges, diameter gauges, inside and outside micrometers, and high-accuracy indicators.\n\nAs the plant's calibration reference, these tools measure diameter, depth, and form at micron level."
       },
       {
-        "id": "poi-qc-granite",
-        "title": "超大型精密岩石量測平台",
-        "body": "Covina 精密花崗岩平板，是品保室量測時的基準平面。花崗岩硬度高、熱膨脹低，表面經精密研磨後不易變形。搭配高度規、量表與塊規，可檢驗零件的平面度、平行度與高度尺寸。",
-        "image": "qc-granite-plate.jpg",
-        "position": {
-          "yaw": "50deg",
-          "pitch": "-26deg"
-        },
-        "titleEn": "Extra-large precision granite measuring table",
-        "bodyEn": "The Covina precision granite surface plate is the reference plane for inspection in the quality room.\n\nGranite is hard and thermally stable, and the lapped surface holds its accuracy. Used with height gauges, indicators, and gauge blocks, it checks flatness, parallelism, and height."
-      },
-      {
         "id": "poi-qc-granite-plate",
         "title": "精密岩石平板",
         "body": "具備 6 米 × 3 米的超大作業面積，採用高密度天然花崗岩，提供極致平整與低熱膨脹的基準面，確保大型床台與大尺寸零件的微米級檢驗精度。",
@@ -251,6 +239,18 @@
         },
         "titleEn": "Precision granite surface plate",
         "bodyEn": "A 6 m × 3 m working area of high-density natural granite provides an ultra-flat, low-thermal-expansion reference surface for micron-level inspection of large beds and oversized parts."
+      },
+      {
+        "id": "poi-qc-granite",
+        "title": "超大型精密岩石量測平台",
+        "body": "Covina 精密花崗岩平板，是品保室量測時的基準平面。花崗岩硬度高、熱膨脹低，表面經精密研磨後不易變形。搭配高度規、量表與塊規，可檢驗零件的平面度、平行度與高度尺寸。",
+        "image": "qc-granite-plate.jpg",
+        "position": {
+          "yaw": "50deg",
+          "pitch": "-26deg"
+        },
+        "titleEn": "Extra-large precision granite measuring table",
+        "bodyEn": "The Covina precision granite surface plate is the reference plane for inspection in the quality room.\n\nGranite is hard and thermally stable, and the lapped surface holds its accuracy. Used with height gauges, indicators, and gauge blocks, it checks flatness, parallelism, and height."
       },
       {
         "id": "poi-qc-2d",

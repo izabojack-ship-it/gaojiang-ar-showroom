@@ -6,6 +6,7 @@
 export const GUIDE_OVERRIDE_KEY = 'f360-guide-overrides';
 const GUIDE_MUTE_KEY = 'f360-guide-muted';
 const GUIDE_MODE_KEY = 'f360-guide-mode'; // avatar=動畫立牌 window=影片視窗 cutout=去背真人
+const GUIDE_MODE_CHOSEN_KEY = 'f360-guide-mode-chosen'; // 只有手動切過才沿用，舊的自動紀錄不算
 export const GUIDE_LANG_KEY = 'f360-guide-lang'; // zh | en
 const GUIDE_SEEN_INTRO_KEY = 'f360-guide-seen-intro';
 const GUIDE_CHANNEL = 'f360-guide-overrides';
@@ -203,11 +204,14 @@ export function createGuideController({
   /** 真人影片導覽員（本機素材，缺檔自動退回立牌＋語音） */
   const VIDEO_BASE = './media/guide/video/';
   const GUIDE_MODES = ['avatar', 'cutout'];
-  let mode = 'avatar';
+  const GUIDE_MODE_DEFAULT = 'cutout';
+  let mode = GUIDE_MODE_DEFAULT;
   try {
     const saved = localStorage.getItem(GUIDE_MODE_KEY);
-    if (GUIDE_MODES.includes(saved)) mode = saved;
-    else if (saved === 'window') mode = 'cutout'; // 舊設定：視窗模式已移除，併入真人
+    const chosen = localStorage.getItem(GUIDE_MODE_CHOSEN_KEY) === '1';
+    // 進頁預設真人。以前會自動把虛擬人寫進紀錄，那不是手動選擇。
+    if (chosen && GUIDE_MODES.includes(saved)) mode = saved;
+    else if (saved === 'window') mode = 'cutout';
   } catch { /* ignore */ }
   let videoBox = null;
   let videoEl = null;
@@ -363,7 +367,8 @@ export function createGuideController({
         backdrop-filter: blur(12px); color: #fff;
         font-size: 0.78rem; font-weight: 700; white-space: nowrap;
       }
-      .f360-guide.is-video-live .f360-presenter { display: none !important; }
+      .f360-guide.is-video-live .f360-presenter,
+      .f360-guide.is-cutout-hold .f360-presenter { display: none !important; }
       @media (max-width: 720px) {
         .f360-guide[data-guide-mode="window"] .f360-gv video { height: min(34vh, 300px); }
         .f360-guide[data-guide-mode="cutout"] .f360-gv video,
@@ -622,13 +627,40 @@ export function createGuideController({
     });
   }
 
-  function applyMode(next) {
-    if (!GUIDE_MODES.includes(next)) next = 'avatar';
+  function applyMode(next, { remember = false } = {}) {
+    if (!GUIDE_MODES.includes(next)) next = GUIDE_MODE_DEFAULT;
     mode = next;
-    try { localStorage.setItem(GUIDE_MODE_KEY, next); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(GUIDE_MODE_KEY, next);
+      if (remember) localStorage.setItem(GUIDE_MODE_CHOSEN_KEY, '1');
+    } catch { /* ignore */ }
     els.root?.setAttribute('data-guide-mode', next);
+    if (next === 'avatar') els.root?.classList.remove('is-cutout-hold');
     stopVideo({ hide: true });
     updateModeButtons();
+  }
+
+  /** 進頁先露出真人定格，聲音仍等使用者點一下才播 */
+  async function showCutoutPoster(key) {
+    if (mode === 'avatar' || !key) return;
+    els.root?.classList.add('is-cutout-hold');
+    try {
+      await playVideoClip(key);
+      if (!videoEl || mode === 'avatar') return;
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+      try { videoEl.pause(); } catch { /* ignore */ }
+      if ((videoEl.currentTime || 0) < 0.05) {
+        try { videoEl.currentTime = 0.12; } catch { /* ignore */ }
+      }
+      usingVideo = false;
+      stopVideoWatchdog();
+      setSpeaking(false);
+      els.root?.classList.remove('is-cutout-hold');
+    } catch (err) {
+      if (err?.message === 'guide-video-stale') return;
+      els.root?.classList.remove('is-cutout-hold');
+    }
   }
 
   function ensureAudioEl() {
@@ -992,10 +1024,10 @@ export function createGuideController({
       || null;
   }
 
-  function stopSpeech() {
+  function stopSpeech({ keepFrame = false } = {}) {
     voiceFromFile = false;
     videoClockFit = false;
-    stopVideo({ hide: true });
+    stopVideo({ hide: !keepFrame });
     stopRecorded();
     if (speechSupported) window.speechSynthesis.cancel();
     currentUtterance = null;
@@ -1009,7 +1041,7 @@ export function createGuideController({
     if (muted && !force) return;
 
     unlockAudioOutput();
-    stopSpeech();
+    stopSpeech({ keepFrame: mode !== 'avatar' && !!key });
     currentSpeakKey = key;
     currentSpeakText = text;
     currentSpeakLang = speakLang;
@@ -1216,12 +1248,17 @@ export function createGuideController({
     renderSpeakableText(c.text);
     setPoiCard(false);
     renderPoiList(getScene?.());
-    if (!autoPlay || muted) return;
+    const introKey = `company__intro_${lang}`;
+    if (!autoPlay || muted) {
+      if (mode !== 'avatar') showCutoutPoster(introKey);
+      return;
+    }
     if (unlockedAudio) {
-      speak(c.text, { key: `company__intro_${lang}`, lang });
+      speak(c.text, { key: introKey, lang });
     } else {
-      // 瀏覽器自動播放限制：等首次觸控／點擊後開講
+      // 瀏覽器自動播放限制：等首次觸控／點擊後開講。畫面先停在真人。
       companyIntroPending = true;
+      if (mode !== 'avatar') showCutoutPoster(introKey);
     }
   }
 
@@ -1304,10 +1341,11 @@ export function createGuideController({
     });
 
     const shouldAuto = autoPlay && guide.autoPlayIntro !== false && !muted;
-    if (shouldAuto && introText) {
-      // 需使用者手勢後才自動播；若尚未解鎖則只顯示文案
-      const key = useEn ? `${scene.id}__intro_en` : `${scene.id}__intro`;
-      if (unlockedAudio) speak(introText, { key, lang: useEn ? 'en' : 'zh' });
+    const key = useEn ? `${scene.id}__intro_en` : `${scene.id}__intro`;
+    if (shouldAuto && introText && unlockedAudio) {
+      speak(introText, { key, lang: useEn ? 'en' : 'zh' });
+    } else if (mode !== 'avatar' && introText) {
+      showCutoutPoster(key);
     }
   }
 
@@ -1431,7 +1469,7 @@ export function createGuideController({
         if (!btn) return;
         wrap.classList.add('is-collapsed');
         stopSpeech();
-        applyMode(btn.dataset.gmode);
+        applyMode(btn.dataset.gmode, { remember: true });
         unlockedAudio = true;
         replayCurrent();
       });
