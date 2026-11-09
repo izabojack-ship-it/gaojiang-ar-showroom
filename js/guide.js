@@ -535,9 +535,12 @@ export function createGuideController({
     });
   }
 
-  async function playVideoClip(key) {
+  async function playVideoClip(key, { idleFallback = true } = {}) {
     ensureVideoEl();
     const token = ++videoToken;
+    const previousSrc = videoEl.currentSrc || videoEl.getAttribute('src') || '';
+    const previousTime = videoEl.currentTime || 0;
+    const hadFrame = videoEl.readyState >= 2 && videoBox && !videoBox.hidden;
     // iPhone／Safari 不支援 WebM 透明通道，改用左右拼接的 H.264（左彩圖、右遮罩）在 canvas 合成去背
     const cutoutFirst = needsPackedCutout()
       ? [['ios.mp4', 'cutout-pack'], ['mp4', 'window']]
@@ -548,7 +551,8 @@ export function createGuideController({
     for (const [ext, kind] of candidates) {
       const candidate = `${VIDEO_BASE}${encodeURIComponent(key)}.${ext}`;
       if (missingVideos.has(candidate)) continue;
-      if (kind === 'cutout-pack') {
+      // iPhone 的拼接片不先探測，避免探測本身把正在播的真人畫面清掉
+      if (kind === 'cutout-pack' && needsPackedCutout()) {
         url = candidate;
         fmt = kind;
         break;
@@ -562,8 +566,13 @@ export function createGuideController({
         if (err?.message === 'guide-video-missing') missingVideos.add(candidate);
       }
     }
-    if (!url) throw new Error('guide-video-missing');
     if (token !== videoToken) throw new Error('guide-video-stale');
+    if (!url) {
+      if (idleFallback && mode !== 'avatar') {
+        await retainCutoutVisual(hadFrame, previousSrc, previousTime);
+      }
+      throw new Error('guide-video-missing');
+    }
     // 旁白 mp3 要繼續播。這裡只停掉瀏覽器合成語音，避免兩種聲音疊在一起。
     if (speechSupported) window.speechSynthesis.cancel();
     els.root?.classList.toggle('is-fmt-cutout', fmt === 'cutout' || fmt === 'cutout-pack');
@@ -582,13 +591,62 @@ export function createGuideController({
         missingVideos.add(url);
         stopPackedComposite();
         const fallback = `${VIDEO_BASE}${encodeURIComponent(key)}.mp4`;
-        els.root?.classList.remove('is-fmt-cutout');
-        els.root?.classList.add('is-fmt-window');
-        videoEl.src = fallback;
-        await videoEl.play();
-        return;
+        if (!missingVideos.has(fallback)) {
+          els.root?.classList.remove('is-fmt-cutout');
+          els.root?.classList.add('is-fmt-window');
+          videoEl.src = fallback;
+          try {
+            await videoEl.play();
+            return;
+          } catch {
+            missingVideos.add(fallback);
+          }
+        }
+      }
+      if (token === videoToken && idleFallback && mode !== 'avatar') {
+        await retainCutoutVisual(hadFrame, previousSrc, previousTime);
       }
       throw err;
+    }
+  }
+
+  /** 這段沒有真人影片時，留下正在看的真人，不要自動改成虛擬人 */
+  async function retainCutoutVisual(hadFrame, previousSrc, previousTime) {
+    if (mode === 'avatar' || !videoEl || !videoBox) return;
+    els.root?.classList.add('is-video-live');
+    videoBox.hidden = false;
+    videoEl.muted = true;
+    videoEl.defaultMuted = true;
+    if (hadFrame && previousSrc) {
+      const current = videoEl.currentSrc || videoEl.getAttribute('src') || '';
+      if (current !== previousSrc) {
+        videoEl.src = previousSrc;
+        await new Promise((resolve) => {
+          const done = () => {
+            videoEl.removeEventListener('loadeddata', done);
+            resolve();
+          };
+          videoEl.addEventListener('loadeddata', done);
+          window.setTimeout(done, 2500);
+        });
+        try { videoEl.currentTime = previousTime; } catch { /* ignore */ }
+      }
+      try { videoEl.pause(); } catch { /* ignore */ }
+      usingVideo = false;
+      stopVideoWatchdog();
+      return;
+    }
+    const idle = lang === 'en' ? 'company__intro_en' : 'company__intro_zh';
+    try {
+      await playVideoClip(idle, { idleFallback: false });
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+      try { videoEl.pause(); } catch { /* ignore */ }
+      try { if ((videoEl.currentTime || 0) < 0.05) videoEl.currentTime = 0.12; } catch { /* ignore */ }
+      usingVideo = false;
+      stopVideoWatchdog();
+    } catch {
+      /* 連定格片都沒有時才讓虛擬人出現 */
     }
   }
 
@@ -1073,7 +1131,7 @@ export function createGuideController({
       videoOk = true;
     } catch (err) {
       if (err?.message === 'guide-video-stale') return;
-      freezeOrHideVideo();
+      if (mode === 'avatar') freezeOrHideVideo();
     }
     if (videoEl && videoOk) {
       videoEl.muted = true;
