@@ -199,6 +199,8 @@ export function createGuideController({
   /** 真人影片只負責畫面；聲音改走最新的 mp3，避免舊片仍唸 Gaojiang */
   let voiceFromFile = false;
   let videoClockFit = false;
+  /** 這段沒有專用對嘴片時，改循環播同場景真人，避免定格 */
+  let videoStandIn = false;
   let liveBase = 0;
 
   /** 真人影片導覽員（本機素材，缺檔自動退回立牌＋語音） */
@@ -536,7 +538,7 @@ export function createGuideController({
     });
   }
 
-  async function playVideoClip(key, { idleFallback = true } = {}) {
+  async function playVideoClip(key, { idleFallback = true, missing = 'still', standIn = false } = {}) {
     ensureVideoEl();
     const token = ++videoToken;
     const previousSrc = videoEl.currentSrc || videoEl.getAttribute('src') || '';
@@ -569,6 +571,10 @@ export function createGuideController({
     }
     if (token !== videoToken) throw new Error('guide-video-stale');
     if (!url) {
+      if (idleFallback && mode !== 'avatar' && missing === 'standin') {
+        const moved = await playTalkingStandIn(key);
+        if (moved) return;
+      }
       if (idleFallback && mode !== 'avatar') {
         await retainCutoutVisual(hadFrame, previousSrc, previousTime);
       }
@@ -582,8 +588,11 @@ export function createGuideController({
     els.root?.classList.add('is-video-live');
     if (fmt === 'cutout-pack') startPackedComposite();
     else stopPackedComposite();
+    videoStandIn = !!standIn;
+    videoEl.loop = !!standIn;
     videoEl.muted = true;
     videoEl.defaultMuted = true;
+    videoEl.playbackRate = 1;
     videoEl.src = url;
     try {
       await videoEl.play();
@@ -611,9 +620,61 @@ export function createGuideController({
     }
   }
 
+  /** 沒有專用對嘴片時，讓畫面上的真人繼續動，不要停在定格 */
+  async function playTalkingStandIn(forKey) {
+    const resumeReady = videoEl
+      && videoBox
+      && !videoBox.hidden
+      && videoEl.readyState >= 2
+      && (videoEl.currentSrc || videoEl.getAttribute('src'));
+    if (resumeReady) {
+      videoStandIn = true;
+      videoClockFit = false;
+      videoEl.loop = true;
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+      videoEl.playbackRate = 1;
+      els.root?.classList.add('is-video-live', 'is-cutout-hold');
+      if (videoEl.ended || (videoEl.duration > 0 && videoEl.currentTime > videoEl.duration - 0.08)) {
+        try { videoEl.currentTime = 0.12; } catch { /* ignore */ }
+      }
+      try {
+        await videoEl.play();
+        usingVideo = true;
+        return true;
+      } catch (err) {
+        if (err?.name === 'AbortError') {
+          try {
+            await videoEl.play();
+            usingVideo = true;
+            return true;
+          } catch { /* 改載一段已知的真人影片 */ }
+        }
+      }
+    }
+    const scene = String(forKey || '').split('__')[0];
+    const en = lang === 'en';
+    const company = en ? 'company__intro_en' : 'company__intro_zh';
+    const sceneIntro = scene && !scene.startsWith('company')
+      ? `${scene}__intro${en ? '_en' : ''}`
+      : '';
+    const keys = [sceneIntro, company].filter((item, index, list) => item && item !== forKey && list.indexOf(item) === index);
+    for (const idle of keys) {
+      try {
+        await playVideoClip(idle, { idleFallback: false, standIn: true });
+        return true;
+      } catch (err) {
+        if (err?.message === 'guide-video-stale') throw err;
+      }
+    }
+    videoStandIn = false;
+    if (videoEl) videoEl.loop = false;
+    return false;
+  }
+
   /** 這段沒有真人影片時，留下正在看的真人，不要自動改成虛擬人 */
   async function retainCutoutVisual(hadFrame, previousSrc, previousTime) {
-    if (mode === 'avatar' || !videoEl || !videoBox) return;
+    if (mode === 'avatar' || !videoEl || !videoBox || videoStandIn) return;
     els.root?.classList.add('is-video-live');
     videoBox.hidden = false;
     videoEl.muted = true;
@@ -632,6 +693,7 @@ export function createGuideController({
         });
         try { videoEl.currentTime = previousTime; } catch { /* ignore */ }
       }
+      if (videoStandIn) return;
       try { videoEl.pause(); } catch { /* ignore */ }
       usingVideo = false;
       stopVideoWatchdog();
@@ -640,6 +702,7 @@ export function createGuideController({
     const idle = lang === 'en' ? 'company__intro_en' : 'company__intro_zh';
     try {
       await playVideoClip(idle, { idleFallback: false });
+      if (videoStandIn) return;
       videoEl.muted = true;
       videoEl.defaultMuted = true;
       try { videoEl.pause(); } catch { /* ignore */ }
@@ -671,6 +734,8 @@ export function createGuideController({
     try { videoEl.pause(); } catch { /* ignore */ }
     usingVideo = false;
     videoClockFit = false;
+    videoStandIn = false;
+    try { videoEl.loop = false; } catch { /* ignore */ }
     try { videoEl.playbackRate = 1; } catch { /* ignore */ }
     if (hide) {
       videoEl.removeAttribute('src');
@@ -705,7 +770,7 @@ export function createGuideController({
     els.root?.classList.add('is-cutout-hold');
     try {
       await playVideoClip(key);
-      if (!videoEl || mode === 'avatar') return;
+      if (!videoEl || mode === 'avatar' || videoStandIn) return;
       videoEl.muted = true;
       videoEl.defaultMuted = true;
       try { videoEl.pause(); } catch { /* ignore */ }
@@ -874,6 +939,11 @@ export function createGuideController({
   function fitVideoToAudio() {
     const video = videoEl;
     const audio = audioEl;
+    if (videoStandIn) {
+      if (video) video.playbackRate = 1;
+      videoClockFit = false;
+      return;
+    }
     if (!voiceFromFile || !video || !audio) return;
     if (!(video.duration > 0) || !(audio.duration > 0)) return;
     const rate = video.duration / audio.duration;
@@ -1138,7 +1208,7 @@ export function createGuideController({
     const audioPromise = playRecorded(key, 0, { keepVideo: true });
     let videoOk = false;
     try {
-      await playVideoClip(key);
+      await playVideoClip(key, { missing: 'standin' });
       videoOk = true;
     } catch (err) {
       if (err?.message === 'guide-video-stale') return;
