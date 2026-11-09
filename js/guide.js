@@ -368,7 +368,8 @@ export function createGuideController({
         font-size: 0.78rem; font-weight: 700; white-space: nowrap;
       }
       .f360-guide.is-video-live .f360-presenter,
-      .f360-guide.is-cutout-hold .f360-presenter { display: none !important; }
+      .f360-guide.is-cutout-hold .f360-presenter,
+      .f360-guide[data-guide-mode="cutout"] .f360-presenter { display: none !important; }
       @media (max-width: 720px) {
         .f360-guide[data-guide-mode="window"] .f360-gv video { height: min(34vh, 300px); }
         .f360-guide[data-guide-mode="cutout"] .f360-gv video,
@@ -1082,6 +1083,16 @@ export function createGuideController({
       || null;
   }
 
+  /** 換場景時先留著真人，不要先露出虛擬人 */
+  function holdForSceneChange() {
+    if (mode === 'avatar') {
+      stopSpeech();
+      return;
+    }
+    els.root?.classList.add('is-cutout-hold');
+    stopSpeech({ keepFrame: true });
+  }
+
   function stopSpeech({ keepFrame = false } = {}) {
     voiceFromFile = false;
     videoClockFit = false;
@@ -1571,6 +1582,7 @@ export function createGuideController({
     getLang: () => lang,
     setLang,
     stopSpeech,
+    holdForSceneChange,
     hidePanel,
     showPanel,
     setCollapsed,

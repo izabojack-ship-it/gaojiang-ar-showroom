@@ -15,7 +15,7 @@ try {
   guideApi = null;
 }
 
-const MEDIA_VERSION = '241';
+const MEDIA_VERSION = '242';
 const STATIONS_URL = `./media/stations.json?v=${MEDIA_VERSION}`;
 const LITE_PANO_WIDTH = 4096;
 const LITE_PANO_HEIGHT = 2048;
@@ -641,7 +641,8 @@ async function switchScene(targetId, options = {}) {
   isTransitioning = true;
   panoUpgradeSeq += 1;
   autorotatePlugin?.stop();
-  guide?.stopSpeech();
+  if (typeof guide?.holdForSceneChange === 'function') guide.holdForSceneChange();
+  else guide?.stopSpeech();
 
   try {
     if (options.viaMarkerId && markersPlugin) {
